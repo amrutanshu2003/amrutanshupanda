@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin | Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <main style="max-width: 900px; margin: 2rem auto;">
+    <section class="section contact" style="text-align:left;">
+      <h2>Portfolio Admin Panel</h2>
+      {% if saved == '1' %}
+      <p style="color: #0f8f4f; font-weight: 600;">Saved successfully to database.</p>
+      {% elif saved == '0' %}
+      <p style="color: #c43838; font-weight: 600;">Save failed. Check image format/size or MongoDB connection.</p>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" style="display:grid; gap:0.8rem; margin-top:1rem;">
+        <label>Name
+          <input name="name" value="{{ profile.name }}" required>
+        </label>
+
+        <label>Headline
+          <input name="headline" value="{{ profile.headline }}" required>
+        </label>
+
+        <label>Email
+          <input name="email" type="email" value="{{ profile.email }}" required>
+        </label>
+
+        <label>Phone
+          <input name="phone" value="{{ profile.phone }}" required>
+        </label>
+
+        <label>Fallback Profile Image Path (inside static/)
+          <input name="profile_image" value="{{ profile.profile_image }}" required>
+        </label>
+
+        <label>Upload Profile Image (saved in MongoDB, max 3MB)
+          <input type="file" name="profile_image_file" accept="image/*">
+        </label>
+
+        <label style="display:flex; align-items:center; gap:0.5rem; font-weight:500;">
+          <input type="checkbox" name="remove_profile_image">
+          Remove current DB image
+        </label>
+
+        {% if profile.get('profile_image_data') %}
+        <img src="{{ profile.get('profile_image_data') }}" alt="Current profile" style="width:140px; border-radius:12px; border:1px solid #ddd;">
+        {% endif %}
+
+        <label>About
+          <textarea name="about" rows="4" required>{{ profile.about }}</textarea>
+        </label>
+
+        <label>Skills (comma separated)
+          <textarea name="skills" rows="3" required>{{ skills_text }}</textarea>
+        </label>
+
+        <label>Stats (one per line: value | label)
+          <textarea name="stats" rows="4" required>{{ stats_text }}</textarea>
+        </label>
+
+        <label>Projects (one per line: title | description | link)
+          <textarea name="projects" rows="6" required>{{ projects_text }}</textarea>
+        </label>
+
+        <button class="btn primary" type="submit" style="border:none; cursor:pointer; width:fit-content;">Save To MongoDB</button>
+      </form>
+
+      <p style="margin-top: 1rem;">
+        <a href="{{ url_for('home') }}">Go to Portfolio</a>
+      </p>
+    </section>
+  </main>
+</body>
+</html>
