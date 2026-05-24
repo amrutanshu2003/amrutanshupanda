@@ -1,13 +1,16 @@
-﻿from flask import Flask, render_template, request, redirect, url_for
+﻿from flask import Flask, render_template, request, redirect, url_for, flash
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from dotenv import load_dotenv
+from email.message import EmailMessage
 import os
 import base64
+import smtplib
 
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this-secret-key")
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb+srv://Portfolio:Portfolio@portfolio.o6nfh3w.mongodb.net/Portfolio?retryWrites=true&w=majority&appName=Portfolio")
 DB_NAME = os.getenv("MONGO_DB", "Portfolio")
@@ -15,6 +18,13 @@ COLLECTION_NAME = os.getenv("MONGO_COLLECTION", "profiles")
 PORT = int(os.getenv("PORT", "5000"))
 CLIENT_URL = os.getenv("CLIENT_URL", f"http://localhost:{PORT}")
 MAX_IMAGE_SIZE = 3 * 1024 * 1024
+
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+MAIL_FROM = os.getenv("MAIL_FROM", SMTP_USER)
+MAIL_TO = os.getenv("MAIL_TO", "amrutanshu20003@gmail.com")
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",
@@ -132,6 +142,34 @@ def save_profile(form_data):
     client.close()
 
 
+def send_contact_email(name, email, subject, message):
+    if not (SMTP_HOST and SMTP_USER and SMTP_PASS and MAIL_FROM and MAIL_TO):
+        raise ValueError("SMTP is not configured.")
+
+    msg = EmailMessage()
+    msg["Subject"] = f"[Portfolio] {subject}"
+    msg["From"] = MAIL_FROM
+    msg["To"] = MAIL_TO
+    msg["Reply-To"] = email
+    msg.set_content(
+        f"New message from portfolio contact form\n\n"
+        f"Name: {name}\n"
+        f"Email: {email}\n"
+        f"Subject: {subject}\n\n"
+        f"Message:\n{message}\n"
+    )
+
+    if SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=12) as server:
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+    else:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=12) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+
+
 @app.route("/")
 def home():
     profile = get_profile()
@@ -140,6 +178,26 @@ def home():
         profile=profile,
         client_url=CLIENT_URL,
     )
+
+
+@app.route("/contact/send", methods=["POST"])
+def contact_send():
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip()
+    subject = request.form.get("subject", "").strip() or "Project inquiry"
+    message = request.form.get("message", "").strip()
+
+    if not name or not email or not message:
+        flash("Please fill Name, Email and Message.", "err")
+        return redirect(url_for("home") + "#contact")
+
+    try:
+        send_contact_email(name, email, subject, message)
+        flash("Message sent successfully.", "ok")
+        return redirect(url_for("home") + "#contact")
+    except Exception:
+        flash("Message failed. Please check SMTP settings.", "err")
+        return redirect(url_for("home") + "#contact")
 
 
 @app.route("/admin", methods=["GET", "POST"])
