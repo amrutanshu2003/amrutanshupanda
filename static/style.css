@@ -319,21 +319,94 @@ main {
   font-weight: 600;
 }
 
-.contact {
-  text-align: center;
-  padding: 2rem 1rem;
-  border-radius: 18px;
-  background: linear-gradient(130deg, var(--card), transparent);
-  border: 1px solid var(--surface-border);
+.contact-block {
+  margin-top: 4rem;
+  padding: 2rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at 95% 8%, rgba(255, 106, 61, 0.28), transparent 32%),
+    radial-gradient(circle at 8% 92%, rgba(255, 106, 61, 0.16), transparent 30%),
+    #1f222c;
+  color: #f3f4f8;
 }
 
-.contact .btn {
-  margin-top: 1rem;
-  display: inline-block;
+.contact-layout {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 2rem;
+  align-items: start;
 }
 
-.contact a {
-  color: var(--text);
+.contact-left h2 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.03;
+  color: #ffffff;
+  margin-bottom: 0.8rem;
+}
+
+.contact-kicker {
+  color: #ff6a3d;
+  letter-spacing: 0.08em;
+  font-size: 0.84rem;
+  margin-bottom: 0.8rem;
+}
+
+.contact-copy {
+  color: #c6cad8;
+  max-width: 420px;
+}
+
+.contact-links {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+.contact-links a {
+  color: #d8dced;
+  text-decoration: none;
+}
+
+.contact-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.contact-form label {
+  color: #d4d8e6;
+  font-size: 0.92rem;
+}
+
+.contact-form input,
+.contact-form textarea {
+  border: 1px solid rgba(120, 126, 156, 0.35);
+  background: rgba(24, 27, 38, 0.88);
+  color: #f1f3fb;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: #7f859d;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.contact-submit {
+  margin-top: 0.5rem;
+  border: 0;
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  font-family: "Outfit", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(120deg, #ff6a3d, #ff8845);
 }
 
 .footer {
@@ -410,6 +483,14 @@ textarea {
 
   .profile-wrap {
     justify-content: flex-start;
+  }
+
+  .contact-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 }
 
