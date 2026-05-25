@@ -11,6 +11,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
+  <div id="pageLoader" class="page-loader" aria-hidden="true">
+    <div class="loader-ring"></div>
+  </div>
   <div class="bg-shapes" aria-hidden="true">
     <span class="shape shape-one"></span>
     <span class="shape shape-two"></span>
@@ -25,7 +28,7 @@
       <a href="#projects">Projects</a>
       <a href="#contact">Contact</a>
     </nav>
-    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">LIGHT</button>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀</button>
   </header>
 
   <main>
@@ -38,6 +41,7 @@
           <div class="hero-actions">
             <a class="btn primary" href="#projects">View Work</a>
             <a class="btn ghost" href="#contact">Contact Me</a>
+            <a class="btn ghost" href="{{ url_for('static', filename='resume/Amrutanshu-Panda-Resume.txt') }}" download>Download Resume</a>
           </div>
         </div>
         <div class="profile-wrap">
@@ -67,9 +71,18 @@
 
     <section id="projects" class="section reveal">
       <h2>Featured Projects</h2>
+      <div class="project-tools">
+        <input id="projectSearch" type="search" placeholder="Search projects..." aria-label="Search projects" />
+        <div class="project-chips" id="projectChips">
+          <button type="button" class="chip active" data-chip="all">All</button>
+          <button type="button" class="chip" data-chip="web">Web</button>
+          <button type="button" class="chip" data-chip="app">App</button>
+          <button type="button" class="chip" data-chip="data">Data</button>
+        </div>
+      </div>
       <div class="projects-grid">
         {% for project in profile.projects %}
-        <article class="project-card">
+        <article class="project-card" data-project="{{ (project.title ~ ' ' ~ project.description)|lower }}" data-category="{{ ['web', 'app', 'data'][loop.index0 % 3] }}">
           <h3>{{ project.title }}</h3>
           <p>{{ project.description }}</p>
           <a href="{{ project.link }}" aria-label="Open {{ project.title }} project">Live Demo -></a>
@@ -97,6 +110,7 @@
               </span>
               <span>{{ profile.email }}</span>
             </a>
+            <button type="button" class="copy-email-btn" id="copyEmailBtn" data-email="{{ profile.email }}">Copy email</button>
             <a href="https://www.linkedin.com/in/amrutanshu-panda-" target="_blank" rel="noreferrer">
               <span class="contact-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -147,7 +161,9 @@
   <footer class="footer">
     <p>(c) <span id="year"></span> {{ profile.name }}. Built with Python + MongoDB.</p>
   </footer>
+  <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
+
