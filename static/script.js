@@ -8,7 +8,6 @@ const projectSearch = document.getElementById("projectSearch");
 const projectCards = document.querySelectorAll(".project-card");
 const copyEmailBtn = document.getElementById("copyEmailBtn");
 const projectChips = document.getElementById("projectChips");
-const pageLoader = document.getElementById("pageLoader");
 let activeCategory = "all";
 
 const setThemeLabel = () => {
@@ -124,11 +123,3 @@ bindCopyEmail();
 revealOnScroll();
 setActiveNav();
 handleBackToTop();
-
-window.addEventListener("load", () => {
-  document.body.classList.add("page-ready");
-  if (pageLoader) {
-    pageLoader.classList.add("hide");
-    setTimeout(() => pageLoader.remove(), 420);
-  }
-});

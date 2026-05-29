@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amrutanshu Panda | Portfolio</title>
+  <meta name="description" content="Modern portfolio website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/style.css" />
+</head>
+<body>
+  <div class="bg-shapes" aria-hidden="true">
+    <span class="shape shape-one"></span>
+    <span class="shape shape-two"></span>
+    <span class="shape shape-three"></span>
+  </div>
+
+  <header class="site-header">
+    <a href="#" class="brand" id="brandName">AMRUTANSHU<span>.</span></a>
+    <nav class="nav">
+      <a href="#about">About</a>
+      <a href="#skills">Skills</a>
+      <a href="#projects">Projects</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <p class="tag" id="headline">Python Developer | Web Enthusiast</p>
+          <h1 id="heroName">Hi, I am Amrutanshu Panda.</h1>
+          <p class="subtext">I build modern digital experiences with Python, beautiful UI, and reliable backend architecture.</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#projects">View Work</a>
+            <a class="btn ghost" href="#contact">Contact Me</a>
+            <a class="btn ghost" href="./assets/resume/Amrutanshu-Panda-Resume.txt" download>Download Resume</a>
+          </div>
+        </div>
+        <div class="profile-wrap">
+          <img id="profileImage" src="https://via.placeholder.com/320x320?text=Profile" alt="Profile image" class="profile-image" />
+        </div>
+      </div>
+      <div class="stats" id="statsWrap"></div>
+    </section>
+
+    <section id="about" class="section about reveal">
+      <h2>About Me</h2>
+      <p id="aboutText"></p>
+    </section>
+
+    <section id="skills" class="section reveal">
+      <h2>Skills</h2>
+      <div class="skills-grid" id="skillsWrap"></div>
+    </section>
+
+    <section id="projects" class="section reveal">
+      <h2>Featured Projects</h2>
+      <div class="project-tools">
+        <input id="projectSearch" type="search" placeholder="Search projects..." aria-label="Search projects" />
+        <div class="project-chips" id="projectChips">
+          <button type="button" class="chip active" data-chip="all">All</button>
+          <button type="button" class="chip" data-chip="web">Web</button>
+          <button type="button" class="chip" data-chip="app">App</button>
+          <button type="button" class="chip" data-chip="data">Data</button>
+        </div>
+      </div>
+      <div class="projects-grid" id="projectsWrap"></div>
+    </section>
+
+    <section id="contact" class="section contact-block reveal">
+      <div class="contact-layout">
+        <div class="contact-left">
+          <p class="contact-kicker">GET IN TOUCH</p>
+          <h2>Let's work together</h2>
+          <p class="contact-copy">If you have a project idea, message me and we can build it together.</p>
+          <div class="contact-links">
+            <a id="mailLink" href="#">Email</a>
+            <button type="button" class="copy-email-btn" id="copyEmailBtn">Copy email</button>
+            <a href="https://www.linkedin.com/in/amrutanshu-panda-" target="_blank" rel="noreferrer">linkedin.com/in/amrutanshu-panda-</a>
+            <a href="https://github.com/amrutanshu2003" target="_blank" rel="noreferrer">github.com/amrutanshu2003</a>
+          </div>
+        </div>
+
+        <form class="contact-form" id="contactForm">
+          <p class="mail-status" id="mailStatus"></p>
+          <div class="form-grid">
+            <label>Name *
+              <input type="text" name="name" placeholder="Your name" required />
+            </label>
+            <label>Email *
+              <input type="email" name="email" placeholder="you@example.com" required />
+            </label>
+          </div>
+          <label>Subject
+            <input type="text" name="subject" placeholder="Project inquiry" />
+          </label>
+          <label>Message *
+            <textarea rows="5" name="message" placeholder="Tell me about your project..." required></textarea>
+          </label>
+          <button type="submit" class="contact-submit">Send message -></button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>(c) <span id="year"></span> <span id="footerName">Amrutanshu Panda</span>. Built with Cloudflare + Render.</p>
+  </footer>
+  <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
+
+  <script>
+    window.BACKEND_URL = "https://YOUR-RENDER-SERVICE.onrender.com";
+  </script>
+  <script src="./assets/app.js"></script>
+</body>
+</html>
