@@ -37,6 +37,7 @@ MAIL_TO = (
     or SMTP_USER
 )
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "smtp").strip().lower()
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",
@@ -174,8 +175,8 @@ def send_contact_email(name, email, subject, message):
         f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n"
     )
 
-    # Fast path: use Resend API over HTTPS (443), reliable on hosted platforms.
-    if RESEND_API_KEY:
+    # Optional provider switch; default stays SMTP (Pinqoza-like flow).
+    if EMAIL_PROVIDER == "resend" and RESEND_API_KEY:
         payload = {
             "from": MAIL_FROM,
             "to": [MAIL_TO],
@@ -219,7 +220,7 @@ def send_contact_email(name, email, subject, message):
         if "Network is unreachable" in str(exc):
             raise ValueError(str(exc))
 
-    # Fallback for Gmail on platforms where STARTTLS can fail intermittently.
+    # SMTP SSL fallback (same SMTP-based behavior, different port).
     try:
         with smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=4) as server:
             server.login(SMTP_USER, SMTP_PASS)
@@ -227,6 +228,33 @@ def send_contact_email(name, email, subject, message):
             return
     except Exception as exc:
         errors.append(f"ssl-465 failed: {exc}")
+
+    # Optional final fallback to Resend if explicitly configured.
+    if RESEND_API_KEY:
+        try:
+            payload = {
+                "from": MAIL_FROM,
+                "to": [MAIL_TO],
+                "subject": f"[Portfolio] {subject}",
+                "text": f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n",
+                "reply_to": email,
+            }
+            body = json.dumps(payload).encode("utf-8")
+            req = urllib_request.Request(
+                "https://api.resend.com/emails",
+                data=body,
+                method="POST",
+                headers={
+                    "Authorization": f"Bearer {RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+            )
+            with urllib_request.urlopen(req, timeout=6) as resp:
+                if resp.status < 200 or resp.status >= 300:
+                    raise ValueError(f"Resend failed with status {resp.status}")
+            return
+        except Exception as exc:
+            errors.append(f"resend failed: {exc}")
 
     raise ValueError(" ; ".join(errors))
 
