@@ -11,6 +11,7 @@ import base64
 import smtplib
 import json
 from urllib import request as urllib_request
+from urllib import parse as urllib_parse
 
 load_dotenv()
 
@@ -37,7 +38,10 @@ MAIL_TO = (
     or SMTP_USER
 )
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
-EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "smtp").strip().lower()
+EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "resend").strip().lower()
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+GOOGLE_REFRESH_TOKEN = os.getenv("GOOGLE_REFRESH_TOKEN", "").strip()
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",
@@ -177,8 +181,11 @@ def send_contact_email(name, email, subject, message):
 
     # Optional provider switch; default stays SMTP (Pinqoza-like flow).
     if EMAIL_PROVIDER == "resend" and RESEND_API_KEY:
+        from_email = MAIL_FROM or "onboarding@resend.dev"
+        if "@" not in from_email:
+            from_email = "onboarding@resend.dev"
         payload = {
-            "from": MAIL_FROM,
+            "from": from_email,
             "to": [MAIL_TO],
             "subject": f"[Portfolio] {subject}",
             "text": f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n",
@@ -232,8 +239,11 @@ def send_contact_email(name, email, subject, message):
     # Optional final fallback to Resend if explicitly configured.
     if RESEND_API_KEY:
         try:
+            from_email = MAIL_FROM or "onboarding@resend.dev"
+            if "@" not in from_email:
+                from_email = "onboarding@resend.dev"
             payload = {
-                "from": MAIL_FROM,
+                "from": from_email,
                 "to": [MAIL_TO],
                 "subject": f"[Portfolio] {subject}",
                 "text": f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n",
@@ -361,3 +371,55 @@ def not_found(error):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT, debug=True)
+    if EMAIL_PROVIDER == "gmail_api":
+        if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and GOOGLE_REFRESH_TOKEN and MAIL_FROM and MAIL_TO):
+            raise ValueError("Gmail API is not configured")
+
+        token_body = urllib_parse.urlencode(
+            {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "refresh_token": GOOGLE_REFRESH_TOKEN,
+                "grant_type": "refresh_token",
+            }
+        ).encode("utf-8")
+        token_req = urllib_request.Request(
+            "https://oauth2.googleapis.com/token",
+            data=token_body,
+            method="POST",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        with urllib_request.urlopen(token_req, timeout=8) as token_resp:
+            token_data = json.loads(token_resp.read().decode("utf-8"))
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise ValueError("Failed to get Gmail access token")
+
+        mime = (
+            f"From: {MAIL_FROM}\r\n"
+            f"To: {MAIL_TO}\r\n"
+            f"Reply-To: {email}\r\n"
+            f"Subject: [Portfolio] {subject}\r\n"
+            "Content-Type: text/plain; charset=utf-8\r\n"
+            "MIME-Version: 1.0\r\n\r\n"
+            f"New message from portfolio\n\n"
+            f"Name: {name}\n"
+            f"Email: {email}\n"
+            f"Subject: {subject}\n\n"
+            f"Message:\n{message}\n"
+        )
+        raw = base64.urlsafe_b64encode(mime.encode("utf-8")).decode("utf-8")
+        gmail_body = json.dumps({"raw": raw}).encode("utf-8")
+        gmail_req = urllib_request.Request(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+            data=gmail_body,
+            method="POST",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            },
+        )
+        with urllib_request.urlopen(gmail_req, timeout=10) as gmail_resp:
+            if gmail_resp.status < 200 or gmail_resp.status >= 300:
+                raise ValueError(f"Gmail API failed with status {gmail_resp.status}")
+        return
