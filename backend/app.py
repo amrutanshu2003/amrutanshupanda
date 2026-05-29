@@ -4,14 +4,9 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from bson import ObjectId
 from dotenv import load_dotenv
-from email.message import EmailMessage
 from datetime import datetime, timezone
 import os
 import base64
-import smtplib
-import json
-from urllib import request as urllib_request
-from urllib import parse as urllib_parse
 
 load_dotenv()
 
@@ -26,22 +21,6 @@ COLLECTION_NAME = os.getenv("MONGO_COLLECTION", "profiles")
 MESSAGE_COLLECTION_NAME = os.getenv("MONGO_MESSAGE_COLLECTION", "messages")
 PORT = int(os.getenv("PORT", "10000"))
 MAX_IMAGE_SIZE = 3 * 1024 * 1024
-
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "").strip()
-SMTP_PASS = os.getenv("SMTP_PASS", "").strip().replace(" ", "")
-MAIL_FROM = os.getenv("MAIL_FROM", SMTP_USER).strip()
-MAIL_TO = (
-    os.getenv("MAIL_TO", "").strip()
-    or os.getenv("CONTACT_TO", "").strip()
-    or SMTP_USER
-)
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
-EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "resend").strip().lower()
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
-GOOGLE_REFRESH_TOKEN = os.getenv("GOOGLE_REFRESH_TOKEN", "").strip()
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",
@@ -166,109 +145,6 @@ def save_profile(form_data):
     collection.update_one({"slug": DEFAULT_PROFILE["slug"]}, {"$set": payload}, upsert=True)
 
 
-def send_contact_email(name, email, subject, message):
-    if not (SMTP_HOST and SMTP_USER and SMTP_PASS and MAIL_FROM and MAIL_TO):
-        raise ValueError("SMTP is not configured")
-
-    msg = EmailMessage()
-    msg["Subject"] = f"[Portfolio] {subject}"
-    msg["From"] = MAIL_FROM
-    msg["To"] = MAIL_TO
-    msg["Reply-To"] = email
-    msg.set_content(
-        f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n"
-    )
-
-    # Optional provider switch; default stays SMTP (Pinqoza-like flow).
-    if EMAIL_PROVIDER == "resend" and RESEND_API_KEY:
-        from_email = MAIL_FROM or "onboarding@resend.dev"
-        if "@" not in from_email:
-            from_email = "onboarding@resend.dev"
-        payload = {
-            "from": from_email,
-            "to": [MAIL_TO],
-            "subject": f"[Portfolio] {subject}",
-            "text": f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n",
-            "reply_to": email,
-        }
-        body = json.dumps(payload).encode("utf-8")
-        req = urllib_request.Request(
-            "https://api.resend.com/emails",
-            data=body,
-            method="POST",
-            headers={
-                "Authorization": f"Bearer {RESEND_API_KEY}",
-                "Content-Type": "application/json",
-            },
-        )
-        with urllib_request.urlopen(req, timeout=6) as resp:
-            if resp.status < 200 or resp.status >= 300:
-                raise ValueError(f"Resend failed with status {resp.status}")
-        return
-
-    errors = []
-    # First try configured mode.
-    try:
-        if SMTP_PORT == 465:
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=4) as server:
-                server.login(SMTP_USER, SMTP_PASS)
-                server.send_message(msg)
-                return
-        else:
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=4) as server:
-                server.ehlo()
-                server.starttls()
-                server.ehlo()
-                server.login(SMTP_USER, SMTP_PASS)
-                server.send_message(msg)
-                return
-    except Exception as exc:
-        errors.append(f"configured-port failed: {exc}")
-        if "Network is unreachable" in str(exc):
-            raise ValueError(str(exc))
-
-    # SMTP SSL fallback (same SMTP-based behavior, different port).
-    try:
-        with smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=4) as server:
-            server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg)
-            return
-    except Exception as exc:
-        errors.append(f"ssl-465 failed: {exc}")
-
-    # Optional final fallback to Resend if explicitly configured.
-    if RESEND_API_KEY:
-        try:
-            from_email = MAIL_FROM or "onboarding@resend.dev"
-            if "@" not in from_email:
-                from_email = "onboarding@resend.dev"
-            payload = {
-                "from": from_email,
-                "to": [MAIL_TO],
-                "subject": f"[Portfolio] {subject}",
-                "text": f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n",
-                "reply_to": email,
-            }
-            body = json.dumps(payload).encode("utf-8")
-            req = urllib_request.Request(
-                "https://api.resend.com/emails",
-                data=body,
-                method="POST",
-                headers={
-                    "Authorization": f"Bearer {RESEND_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-            )
-            with urllib_request.urlopen(req, timeout=6) as resp:
-                if resp.status < 200 or resp.status >= 300:
-                    raise ValueError(f"Resend failed with status {resp.status}")
-            return
-        except Exception as exc:
-            errors.append(f"resend failed: {exc}")
-
-    raise ValueError(" ; ".join(errors))
-
-
 def save_contact_message(name, email, subject, message):
     payload = {
         "name": name,
@@ -321,11 +197,7 @@ def api_contact():
     except Exception:
         return jsonify({"ok": False, "error": "Message could not be saved to database"}), 500
 
-    try:
-        send_contact_email(name, email, subject, message)
-        return jsonify({"ok": True})
-    except Exception as exc:
-        return jsonify({"ok": True, "mail_sent": False, "warning": str(exc)})
+    return jsonify({"ok": True})
 
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -371,55 +243,3 @@ def not_found(error):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT, debug=True)
-    if EMAIL_PROVIDER == "gmail_api":
-        if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and GOOGLE_REFRESH_TOKEN and MAIL_FROM and MAIL_TO):
-            raise ValueError("Gmail API is not configured")
-
-        token_body = urllib_parse.urlencode(
-            {
-                "client_id": GOOGLE_CLIENT_ID,
-                "client_secret": GOOGLE_CLIENT_SECRET,
-                "refresh_token": GOOGLE_REFRESH_TOKEN,
-                "grant_type": "refresh_token",
-            }
-        ).encode("utf-8")
-        token_req = urllib_request.Request(
-            "https://oauth2.googleapis.com/token",
-            data=token_body,
-            method="POST",
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-        with urllib_request.urlopen(token_req, timeout=8) as token_resp:
-            token_data = json.loads(token_resp.read().decode("utf-8"))
-        access_token = token_data.get("access_token")
-        if not access_token:
-            raise ValueError("Failed to get Gmail access token")
-
-        mime = (
-            f"From: {MAIL_FROM}\r\n"
-            f"To: {MAIL_TO}\r\n"
-            f"Reply-To: {email}\r\n"
-            f"Subject: [Portfolio] {subject}\r\n"
-            "Content-Type: text/plain; charset=utf-8\r\n"
-            "MIME-Version: 1.0\r\n\r\n"
-            f"New message from portfolio\n\n"
-            f"Name: {name}\n"
-            f"Email: {email}\n"
-            f"Subject: {subject}\n\n"
-            f"Message:\n{message}\n"
-        )
-        raw = base64.urlsafe_b64encode(mime.encode("utf-8")).decode("utf-8")
-        gmail_body = json.dumps({"raw": raw}).encode("utf-8")
-        gmail_req = urllib_request.Request(
-            "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
-            data=gmail_body,
-            method="POST",
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
-            },
-        )
-        with urllib_request.urlopen(gmail_req, timeout=10) as gmail_resp:
-            if gmail_resp.status < 200 or gmail_resp.status >= 300:
-                raise ValueError(f"Gmail API failed with status {gmail_resp.status}")
-        return

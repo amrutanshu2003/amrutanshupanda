@@ -158,12 +158,7 @@ const bindContactSubmit = () => {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Failed to send");
-      if (data.mail_sent === false) {
-        const detail = data.warning ? ` (${data.warning})` : "";
-        showStatus(`Message saved, but email was not sent${detail}.`, false);
-      } else {
-        showStatus("Message sent successfully.", true);
-      }
+      showStatus("Message submitted successfully.", true);
       contactForm.reset();
     } catch (err) {
       showStatus(err.message || "Message failed.", false);
