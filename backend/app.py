@@ -26,10 +26,10 @@ MAX_IMAGE_SIZE = 3 * 1024 * 1024
 
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASS = os.getenv("SMTP_PASS", "")
-MAIL_FROM = os.getenv("MAIL_FROM", SMTP_USER)
-MAIL_TO = os.getenv("MAIL_TO", SMTP_USER)
+SMTP_USER = os.getenv("SMTP_USER", "").strip()
+SMTP_PASS = os.getenv("SMTP_PASS", "").strip().replace(" ", "")
+MAIL_FROM = os.getenv("MAIL_FROM", SMTP_USER).strip()
+MAIL_TO = os.getenv("MAIL_TO", SMTP_USER).strip()
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",
@@ -167,17 +167,35 @@ def send_contact_email(name, email, subject, message):
         f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n"
     )
 
-    if SMTP_PORT == 465:
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=12) as server:
+    errors = []
+    # First try configured mode.
+    try:
+        if SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+                server.login(SMTP_USER, SMTP_PASS)
+                server.send_message(msg)
+                return
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(SMTP_USER, SMTP_PASS)
+                server.send_message(msg)
+                return
+    except Exception as exc:
+        errors.append(f"configured-port failed: {exc}")
+
+    # Fallback for Gmail on platforms where STARTTLS can fail intermittently.
+    try:
+        with smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=15) as server:
             server.login(SMTP_USER, SMTP_PASS)
             server.send_message(msg)
-    else:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=12) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg)
+            return
+    except Exception as exc:
+        errors.append(f"ssl-465 failed: {exc}")
+
+    raise ValueError(" ; ".join(errors))
 
 
 def save_contact_message(name, email, subject, message):
