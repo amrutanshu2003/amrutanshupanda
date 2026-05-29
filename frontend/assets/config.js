@@ -1,1 +1,1 @@
-﻿// window.BACKEND_URL = "";
+﻿window.BACKEND_URL = "https://amrutanshupanda.onrender.com";
