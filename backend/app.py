@@ -29,7 +29,11 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "").strip()
 SMTP_PASS = os.getenv("SMTP_PASS", "").strip().replace(" ", "")
 MAIL_FROM = os.getenv("MAIL_FROM", SMTP_USER).strip()
-MAIL_TO = os.getenv("MAIL_TO", SMTP_USER).strip()
+MAIL_TO = (
+    os.getenv("MAIL_TO", "").strip()
+    or os.getenv("CONTACT_TO", "").strip()
+    or SMTP_USER
+)
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",

@@ -159,7 +159,8 @@ const bindContactSubmit = () => {
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Failed to send");
       if (data.mail_sent === false) {
-        showStatus("Message saved. Email delivery is currently unavailable.", true);
+        const detail = data.warning ? ` (${data.warning})` : "";
+        showStatus(`Message saved, but email was not sent${detail}.`, false);
       } else {
         showStatus("Message sent successfully.", true);
       }
