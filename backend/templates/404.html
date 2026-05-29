@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 | Page Not Found</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c1020;
+      --card: rgba(22, 28, 47, 0.78);
+      --border: rgba(255, 255, 255, 0.14);
+      --text: #edf1ff;
+      --muted: #aeb7d8;
+      --accent: #ff7a49;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      font-family: "Outfit", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 15%, rgba(255, 122, 73, 0.35), transparent 30%),
+        radial-gradient(circle at 85% 80%, rgba(109, 90, 255, 0.25), transparent 28%),
+        var(--bg);
+    }
+    .card {
+      width: min(680px, 100%);
+      border: 1px solid var(--border);
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.35);
+    }
+    .code {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(3rem, 10vw, 6rem);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .code span { color: var(--accent); }
+    h1 {
+      margin-top: 0.8rem;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(1.35rem, 4vw, 2rem);
+    }
+    p {
+      margin-top: 0.75rem;
+      color: var(--muted);
+      max-width: 54ch;
+    }
+    .actions {
+      margin-top: 1.3rem;
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+    }
+    a {
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 0.72rem 1rem;
+      font-weight: 600;
+    }
+    .primary {
+      color: #fff;
+      background: linear-gradient(120deg, #ff7a49, #ffa34f);
+    }
+    .ghost {
+      color: var(--text);
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <p class="code">4<span>0</span>4</p>
+    <h1>Page Not Found</h1>
+    <p>The URL you entered does not exist on this server. Check the link or go back to a valid page.</p>
+    <div class="actions">
+      <a class="primary" href="/admin">Go to Admin</a>
+      <a class="ghost" href="/">Backend Home</a>
+    </div>
+  </main>
+</body>
+</html>
