@@ -42,7 +42,13 @@
           </div>
         </div>
         <div class="profile-wrap">
-          <img id="profileImage" src="https://via.placeholder.com/320x320?text=Profile" alt="Profile image" class="profile-image" />
+          <div class="profile-fallback" id="profileFallback" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-label="Profile placeholder">
+              <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"></circle>
+              <path d="M4 20c1.7-3.8 4.3-5.7 8-5.7s6.3 1.9 8 5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <img id="profileImage" src="" alt="Profile image" class="profile-image" />
         </div>
       </div>
       <div class="stats" id="statsWrap"></div>

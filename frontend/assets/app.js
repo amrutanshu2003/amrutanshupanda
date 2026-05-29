@@ -15,6 +15,25 @@ const API_BASE = "/api";
 
 let activeCategory = "all";
 
+const applyProfileImage = (value) => {
+  const profileImage = document.getElementById("profileImage");
+  const profileWrap = document.querySelector(".profile-wrap");
+  const src = (value || "").trim();
+
+  if (!src) {
+    profileImage.removeAttribute("src");
+    profileWrap.classList.remove("has-image");
+    return;
+  }
+
+  profileImage.onload = () => profileWrap.classList.add("has-image");
+  profileImage.onerror = () => {
+    profileImage.removeAttribute("src");
+    profileWrap.classList.remove("has-image");
+  };
+  profileImage.src = src;
+};
+
 const setThemeLabel = () => {
   themeToggle.textContent = body.classList.contains("dark") ? "🌙" : "☀";
 };
@@ -161,8 +180,7 @@ const bootstrap = async () => {
     document.getElementById("heroName").textContent = `Hi, I am ${profile.name}.`;
     document.getElementById("aboutText").textContent = profile.about;
     document.getElementById("footerName").textContent = profile.name;
-    const profileImage = document.getElementById("profileImage");
-    profileImage.src = profile.profile_image_data || profile.profile_image || profileImage.src;
+    applyProfileImage(profile.profile_image_data || profile.profile_image || "");
 
     const statsWrap = document.getElementById("statsWrap");
     statsWrap.innerHTML = "";

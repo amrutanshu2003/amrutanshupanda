@@ -175,8 +175,30 @@ main {
 }
 
 .profile-wrap {
+  position: relative;
   display: flex;
   justify-content: center;
+}
+
+.profile-fallback {
+  width: min(320px, 100%);
+  aspect-ratio: 1 / 1;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow);
+  display: grid;
+  place-items: center;
+  color: rgba(238, 238, 245, 0.82);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+}
+
+.profile-fallback svg {
+  width: 36%;
+  max-width: 120px;
+}
+
+.profile-wrap.has-image .profile-fallback {
+  display: none;
 }
 
 .profile-image {
@@ -186,6 +208,11 @@ main {
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: var(--shadow);
+  display: none;
+}
+
+.profile-wrap.has-image .profile-image {
+  display: block;
 }
 
 .tag {
