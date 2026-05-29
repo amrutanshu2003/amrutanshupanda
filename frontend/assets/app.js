@@ -11,7 +11,7 @@ const copyEmailBtn = document.getElementById("copyEmailBtn");
 const mailLink = document.getElementById("mailLink");
 const contactForm = document.getElementById("contactForm");
 const mailStatus = document.getElementById("mailStatus");
-const API_BASE = (window.BACKEND_URL || "").replace(/\/$/, "");
+const API_BASE = "/api";
 
 let activeCategory = "all";
 
@@ -132,7 +132,7 @@ const bindContactSubmit = () => {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/contact`, {
+      const res = await fetch(`${API_BASE}/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -153,7 +153,7 @@ const bootstrap = async () => {
     return;
   }
   try {
-    const res = await fetch(`${API_BASE}/api/profile`);
+    const res = await fetch(`${API_BASE}/profile`);
     const profile = await res.json();
 
     document.getElementById("brandName").innerHTML = `${profile.name.split(" ")[0].toUpperCase()}<span>.</span>`;
@@ -203,3 +203,4 @@ revealOnScroll();
 setActiveNav();
 handleBackToTop();
 bootstrap();
+

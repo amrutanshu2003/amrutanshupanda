@@ -12,7 +12,7 @@
 
 ### Important
 Set `FRONTEND_ORIGIN` to your Pages domain.
-Example: `https://my-portfolio.pages.dev`
+Example: `https://amrutanshupanda.pages.dev`
 
 ## 2) Deploy frontend on Cloudflare Pages
 - Root Directory: `frontend`
@@ -20,15 +20,24 @@ Example: `https://my-portfolio.pages.dev`
 - Build command: (leave empty)
 - Output directory: `/`
 
-Before deploy, in `frontend/index.html` set:
-`window.BACKEND_URL = "https://YOUR-RENDER-SERVICE.onrender.com"`
+No backend URL hardcode needed.
+This project uses Cloudflare Pages Function proxy at `/api/*`.
 
-## 3) DNS and testing
+In Cloudflare Pages > Settings > Environment Variables add:
+- `BACKEND_ORIGIN=https://amrutanshupanda.onrender.com`
+
+## 3) How it works
+- Frontend calls `/api/profile` and `/api/contact`
+- Pages Function (`frontend/functions/api/[[path]].js`) proxies to Render backend
+- Backend URL remains hidden from frontend config
+
+## 4) Testing
 - Open frontend URL
-- Check profile loads (from backend `/api/profile`)
-- Submit contact form (hits backend `/api/contact`)
-- Open backend admin at `https://YOUR-RENDER-SERVICE.onrender.com/admin`
+- Check profile loads
+- Submit contact form
+- Admin panel remains on backend:
+  `https://amrutanshupanda.onrender.com/admin`
 
-## 4) MongoDB Atlas
+## 5) MongoDB Atlas
 - Network access allow Render (temporary `0.0.0.0/0`)
 - Database user read/write access
