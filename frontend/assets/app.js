@@ -158,7 +158,11 @@ const bindContactSubmit = () => {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Failed to send");
-      showStatus("Message sent successfully.", true);
+      if (data.mail_sent === false) {
+        showStatus("Message saved. Email delivery is currently unavailable.", true);
+      } else {
+        showStatus("Message sent successfully.", true);
+      }
       contactForm.reset();
     } catch (err) {
       showStatus(err.message || "Message failed.", false);

@@ -75,6 +75,24 @@
       <p style="margin-top: 1rem;">
         <a href="/">Go to Backend Root</a>
       </p>
+
+      <hr style="margin: 2rem 0; border: 0; border-top: 1px solid rgba(0,0,0,0.12);" />
+      <h3>Recent Contact Messages</h3>
+      {% if recent_messages and recent_messages|length > 0 %}
+      <div style="display:grid; gap:0.8rem; margin-top:0.8rem;">
+        {% for m in recent_messages %}
+        <article style="border:1px solid rgba(0,0,0,0.15); border-radius:12px; padding:0.9rem; background:#fff;">
+          <p><strong>Name:</strong> {{ m.get("name", "-") }}</p>
+          <p><strong>Email:</strong> {{ m.get("email", "-") }}</p>
+          <p><strong>Subject:</strong> {{ m.get("subject", "-") }}</p>
+          <p><strong>Time:</strong> {{ m.get("created_at_str", "-") }}</p>
+          <p style="margin-top:0.45rem;"><strong>Message:</strong><br>{{ m.get("message", "-") }}</p>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="margin-top:0.8rem; color:#666;">No messages yet.</p>
+      {% endif %}
     </section>
   </main>
 </body>

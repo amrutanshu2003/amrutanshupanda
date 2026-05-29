@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from dotenv import load_dotenv
 from email.message import EmailMessage
+from datetime import datetime, timezone
 import os
 import base64
 import smtplib
@@ -18,6 +19,7 @@ CORS(app, resources={r"/api/*": {"origins": FRONTEND_ORIGIN if FRONTEND_ORIGIN !
 MONGO_URI = os.getenv("MONGO_URI", "")
 DB_NAME = os.getenv("MONGO_DB", "Portfolio")
 COLLECTION_NAME = os.getenv("MONGO_COLLECTION", "profiles")
+MESSAGE_COLLECTION_NAME = os.getenv("MONGO_MESSAGE_COLLECTION", "messages")
 PORT = int(os.getenv("PORT", "10000"))
 MAX_IMAGE_SIZE = 3 * 1024 * 1024
 
@@ -52,13 +54,13 @@ DEFAULT_PROFILE = {
 
 
 _mongo_client = None
-_collection = None
+_db = None
 
 
-def get_collection():
-    global _mongo_client, _collection
-    if _collection is not None:
-        return _collection
+def get_db():
+    global _mongo_client, _db
+    if _db is not None:
+        return _db
     _mongo_client = MongoClient(
         MONGO_URI,
         serverSelectionTimeoutMS=3000,
@@ -67,8 +69,16 @@ def get_collection():
         maxPoolSize=20,
         retryWrites=True,
     )
-    _collection = _mongo_client[DB_NAME][COLLECTION_NAME]
-    return _collection
+    _db = _mongo_client[DB_NAME]
+    return _db
+
+
+def get_collection():
+    return get_db()[COLLECTION_NAME]
+
+
+def get_messages_collection():
+    return get_db()[MESSAGE_COLLECTION_NAME]
 
 
 def get_profile():
@@ -167,6 +177,28 @@ def send_contact_email(name, email, subject, message):
             server.send_message(msg)
 
 
+def save_contact_message(name, email, subject, message):
+    payload = {
+        "name": name,
+        "email": email,
+        "subject": subject,
+        "message": message,
+        "created_at": datetime.now(timezone.utc),
+    }
+    get_messages_collection().insert_one(payload)
+
+
+def list_recent_messages(limit=20):
+    docs = list(get_messages_collection().find().sort("created_at", -1).limit(limit))
+    for item in docs:
+        created = item.get("created_at")
+        if created:
+            item["created_at_str"] = created.astimezone().strftime("%d %b %Y, %I:%M %p")
+        else:
+            item["created_at_str"] = "-"
+    return docs
+
+
 @app.get("/")
 def root():
     return jsonify({"service": "portfolio-backend", "ok": True})
@@ -189,10 +221,15 @@ def api_contact():
         return jsonify({"ok": False, "error": "Please fill name, email and message"}), 400
 
     try:
+        save_contact_message(name, email, subject, message)
+    except Exception:
+        return jsonify({"ok": False, "error": "Message could not be saved to database"}), 500
+
+    try:
         send_contact_email(name, email, subject, message)
         return jsonify({"ok": True})
     except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)}), 500
+        return jsonify({"ok": True, "mail_sent": False, "warning": str(exc)})
 
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -208,12 +245,14 @@ def admin():
     stats_text = "\n".join([f"{s.get('value','')} | {s.get('label','')}" for s in profile.get("stats", [])])
     projects_text = "\n".join([f"{p.get('title','')} | {p.get('description','')} | {p.get('link','#')}" for p in profile.get("projects", [])])
     skills_text = ", ".join(profile.get("skills", []))
+    recent_messages = list_recent_messages()
     return render_template(
         "admin.html",
         profile=profile,
         skills_text=skills_text,
         stats_text=stats_text,
         projects_text=projects_text,
+        recent_messages=recent_messages,
         saved=request.args.get("saved"),
     )
 
