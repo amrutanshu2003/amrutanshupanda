@@ -3,6 +3,7 @@ const themeToggle = document.getElementById("themeToggle");
 const year = document.getElementById("year");
 const navLinks = document.querySelectorAll(".nav a");
 const backToTop = document.getElementById("backToTop");
+const revealItems = document.querySelectorAll(".reveal");
 const projectSearch = document.getElementById("projectSearch");
 const projectChips = document.getElementById("projectChips");
 const projectsWrap = document.getElementById("projectsWrap");
@@ -42,6 +43,15 @@ const setActiveNav = () => {
 
 const handleBackToTop = () => {
   backToTop.classList.toggle("show", window.scrollY > 320);
+};
+
+const revealOnScroll = () => {
+  revealItems.forEach((item) => {
+    const top = item.getBoundingClientRect().top;
+    if (top < window.innerHeight - 80) {
+      item.classList.add("show");
+    }
+  });
 };
 
 const projectCategory = (i) => ["web", "app", "data"][i % 3];
@@ -182,12 +192,14 @@ year.textContent = new Date().getFullYear();
 applyStoredTheme();
 themeToggle.addEventListener("click", toggleTheme);
 window.addEventListener("scroll", () => {
+  revealOnScroll();
   setActiveNav();
   handleBackToTop();
 });
 backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 bindProjectFilters();
 bindContactSubmit();
+revealOnScroll();
 setActiveNav();
 handleBackToTop();
 bootstrap();
