@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 import os
 import base64
 import smtplib
+import json
+from urllib import request as urllib_request
 
 load_dotenv()
 
@@ -34,6 +36,7 @@ MAIL_TO = (
     or os.getenv("CONTACT_TO", "").strip()
     or SMTP_USER
 )
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",
@@ -171,16 +174,40 @@ def send_contact_email(name, email, subject, message):
         f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n"
     )
 
+    # Fast path: use Resend API over HTTPS (443), reliable on hosted platforms.
+    if RESEND_API_KEY:
+        payload = {
+            "from": MAIL_FROM,
+            "to": [MAIL_TO],
+            "subject": f"[Portfolio] {subject}",
+            "text": f"New message from portfolio\n\nName: {name}\nEmail: {email}\nSubject: {subject}\n\nMessage:\n{message}\n",
+            "reply_to": email,
+        }
+        body = json.dumps(payload).encode("utf-8")
+        req = urllib_request.Request(
+            "https://api.resend.com/emails",
+            data=body,
+            method="POST",
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+        )
+        with urllib_request.urlopen(req, timeout=6) as resp:
+            if resp.status < 200 or resp.status >= 300:
+                raise ValueError(f"Resend failed with status {resp.status}")
+        return
+
     errors = []
     # First try configured mode.
     try:
         if SMTP_PORT == 465:
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=4) as server:
                 server.login(SMTP_USER, SMTP_PASS)
                 server.send_message(msg)
                 return
         else:
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=4) as server:
                 server.ehlo()
                 server.starttls()
                 server.ehlo()
@@ -189,10 +216,12 @@ def send_contact_email(name, email, subject, message):
                 return
     except Exception as exc:
         errors.append(f"configured-port failed: {exc}")
+        if "Network is unreachable" in str(exc):
+            raise ValueError(str(exc))
 
     # Fallback for Gmail on platforms where STARTTLS can fail intermittently.
     try:
-        with smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=15) as server:
+        with smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=4) as server:
             server.login(SMTP_USER, SMTP_PASS)
             server.send_message(msg)
             return
