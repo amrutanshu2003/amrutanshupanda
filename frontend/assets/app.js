@@ -10,6 +10,7 @@ const copyEmailBtn = document.getElementById("copyEmailBtn");
 const mailLink = document.getElementById("mailLink");
 const contactForm = document.getElementById("contactForm");
 const mailStatus = document.getElementById("mailStatus");
+const API_BASE = (window.BACKEND_URL || "").replace(/\/$/, "");
 
 let activeCategory = "all";
 
@@ -115,8 +116,13 @@ const bindContactSubmit = () => {
       message: form.get("message"),
     };
 
+    if (!API_BASE) {
+      showStatus("Backend URL is not configured.", false);
+      return;
+    }
+
     try {
-      const res = await fetch(`${window.BACKEND_URL}/api/contact`, {
+      const res = await fetch(`${API_BASE}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -132,8 +138,12 @@ const bindContactSubmit = () => {
 };
 
 const bootstrap = async () => {
+  if (!API_BASE) {
+    showStatus("Backend URL is not configured.", false);
+    return;
+  }
   try {
-    const res = await fetch(`${window.BACKEND_URL}/api/profile`);
+    const res = await fetch(`${API_BASE}/api/profile`);
     const profile = await res.json();
 
     document.getElementById("brandName").innerHTML = `${profile.name.split(" ")[0].toUpperCase()}<span>.</span>`;
