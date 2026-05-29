@@ -51,20 +51,33 @@ DEFAULT_PROFILE = {
 }
 
 
+_mongo_client = None
+_collection = None
+
+
 def get_collection():
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-    db = client[DB_NAME]
-    return client, db[COLLECTION_NAME]
+    global _mongo_client, _collection
+    if _collection is not None:
+        return _collection
+    _mongo_client = MongoClient(
+        MONGO_URI,
+        serverSelectionTimeoutMS=3000,
+        connectTimeoutMS=3000,
+        socketTimeoutMS=8000,
+        maxPoolSize=20,
+        retryWrites=True,
+    )
+    _collection = _mongo_client[DB_NAME][COLLECTION_NAME]
+    return _collection
 
 
 def get_profile():
     try:
-        client, collection = get_collection()
+        collection = get_collection()
         profile = collection.find_one({"slug": DEFAULT_PROFILE["slug"]})
         if not profile:
             collection.insert_one(DEFAULT_PROFILE.copy())
             profile = collection.find_one({"slug": DEFAULT_PROFILE["slug"]})
-        client.close()
         return profile or DEFAULT_PROFILE
     except PyMongoError:
         return DEFAULT_PROFILE
@@ -126,9 +139,8 @@ def save_profile(form_data):
     elif remove_image:
         payload["profile_image_data"] = ""
 
-    client, collection = get_collection()
+    collection = get_collection()
     collection.update_one({"slug": DEFAULT_PROFILE["slug"]}, {"$set": payload}, upsert=True)
-    client.close()
 
 
 def send_contact_email(name, email, subject, message):
