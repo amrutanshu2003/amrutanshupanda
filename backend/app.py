@@ -23,12 +23,12 @@ MESSAGE_COLLECTION_NAME = os.getenv("MONGO_MESSAGE_COLLECTION", "messages")
 PORT = int(os.getenv("PORT", "10000"))
 MAX_IMAGE_SIZE = 3 * 1024 * 1024
 
-SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
 MAIL_FROM = os.getenv("MAIL_FROM", SMTP_USER)
-MAIL_TO = os.getenv("MAIL_TO", "")
+MAIL_TO = os.getenv("MAIL_TO", SMTP_USER)
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",
@@ -172,7 +172,9 @@ def send_contact_email(name, email, subject, message):
             server.send_message(msg)
     else:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=12) as server:
+            server.ehlo()
             server.starttls()
+            server.ehlo()
             server.login(SMTP_USER, SMTP_PASS)
             server.send_message(msg)
 
