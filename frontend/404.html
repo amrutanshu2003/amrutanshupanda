@@ -37,6 +37,30 @@
       backdrop-filter: blur(9px);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
       padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    main::after {
+      content: "";
+      position: absolute;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      right: -90px;
+      top: -90px;
+      background: radial-gradient(circle, rgba(255, 122, 73, 0.38), transparent 70%);
+      filter: blur(4px);
+    }
+    .eyebrow {
+      display: inline-block;
+      padding: 0.28rem 0.62rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: #d8def8;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
     .top {
       font-family: "Space Grotesk", sans-serif;
@@ -80,7 +104,8 @@
 </head>
 <body>
   <main>
-    <p class="top">4<span>0</span>4</p>
+    <span class="eyebrow">Not Found</span>
+    <p class="top">Oops! 4<span>0</span>4</p>
     <h1>This page does not exist</h1>
     <p>The URL is invalid or the page was moved. Use the button below to return to your portfolio homepage.</p>
     <div class="actions">
