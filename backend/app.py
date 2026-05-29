@@ -2,6 +2,7 @@
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
+from bson import ObjectId
 from dotenv import load_dotenv
 from email.message import EmailMessage
 from datetime import datetime, timezone
@@ -201,6 +202,10 @@ def list_recent_messages(limit=20):
     return docs
 
 
+def delete_message(message_id):
+    get_messages_collection().delete_one({"_id": ObjectId(message_id)})
+
+
 @app.get("/")
 def root():
     return jsonify({"service": "portfolio-backend", "ok": True})
@@ -257,6 +262,15 @@ def admin():
         recent_messages=recent_messages,
         saved=request.args.get("saved"),
     )
+
+
+@app.post("/admin/messages/delete/<message_id>")
+def admin_delete_message(message_id):
+    try:
+        delete_message(message_id)
+    except Exception:
+        pass
+    return redirect(url_for("admin"))
 
 
 @app.errorhandler(404)
