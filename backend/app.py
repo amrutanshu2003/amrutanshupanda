@@ -1,4 +1,4 @@
-﻿from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone
 import os
 import base64
+import smtplib
+from email.message import EmailMessage
 
 load_dotenv()
 
@@ -21,6 +23,13 @@ COLLECTION_NAME = os.getenv("MONGO_COLLECTION", "profiles")
 MESSAGE_COLLECTION_NAME = os.getenv("MONGO_MESSAGE_COLLECTION", "messages")
 PORT = int(os.getenv("PORT", "10000"))
 MAX_IMAGE_SIZE = 3 * 1024 * 1024
+
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+MAIL_FROM = os.getenv("MAIL_FROM", SMTP_USER)
+MAIL_TO = os.getenv("MAIL_TO", "amrutanshu20003@gmail.com")
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",
@@ -156,6 +165,34 @@ def save_contact_message(name, email, subject, message):
     get_messages_collection().insert_one(payload)
 
 
+def send_contact_email(name, email, subject, message):
+    if not (SMTP_HOST and SMTP_USER and SMTP_PASS and MAIL_FROM and MAIL_TO):
+        raise ValueError("SMTP is not configured.")
+
+    msg = EmailMessage()
+    msg["Subject"] = f"[Portfolio] {subject}"
+    msg["From"] = MAIL_FROM
+    msg["To"] = MAIL_TO
+    msg["Reply-To"] = email
+    msg.set_content(
+        f"New message from portfolio contact form\n\n"
+        f"Name: {name}\n"
+        f"Email: {email}\n"
+        f"Subject: {subject}\n\n"
+        f"Message:\n{message}\n"
+    )
+
+    if SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=12) as server:
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+    else:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=12) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+
+
 def list_recent_messages(limit=20):
     docs = list(get_messages_collection().find().sort("created_at", -1).limit(limit))
     for item in docs:
@@ -196,6 +233,12 @@ def api_contact():
         save_contact_message(name, email, subject, message)
     except Exception:
         return jsonify({"ok": False, "error": "Message could not be saved to database"}), 500
+
+    try:
+        send_contact_email(name, email, subject, message)
+    except Exception as e:
+        print(f"SMTP Error: {e}")
+        return jsonify({"ok": False, "error": "Message saved, but email sending failed. Please check backend SMTP settings."}), 500
 
     return jsonify({"ok": True})
 
