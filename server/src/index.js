@@ -208,69 +208,97 @@ app.post("/api/contact", async (req, res) => {
         profilePicHtml = `<div style="width: 50px; height: 50px; border-radius: 50%; background: #087f6c; color: #ffffff; text-align: center; line-height: 50px; font-size: 22px; font-weight: bold; font-family: sans-serif; display: block;">${letter}</div>`;
       }
 
-      const mailOptions = {
+      // A. Mail options for Amrutanshu Panda (Owner notification)
+      const notificationMailOptions = {
         from: `"${receiverName} Portfolio" <${process.env.SMTP_USER}>`,
         to: receiverEmail,
         replyTo: String(email).trim(),
-        subject: `📩 New Portfolio Message from ${name}: ${String(subject || "Project inquiry").trim()}`,
+        subject: `📩 New Message from ${name}: ${String(subject || "Project inquiry").trim()}`,
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f6f9fc; padding: 40px 20px; color: #333333; margin: 0;">
-            <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #eef2f6;">
-              <!-- Header Brand Strip with Gradient Accent -->
-              <div style="background: linear-gradient(135deg, #087f6c 0%, #066657 100%); padding: 6px;"></div>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 50px 20px; color: #0f172a; margin: 0;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); border: 1px solid #e2e8f0;">
+              
+              <!-- Glowing Top Gradient Bar -->
+              <div style="background: linear-gradient(90deg, #0ea5e9 0%, #10b981 100%); height: 6px;"></div>
               
               <!-- Header Section -->
-              <div style="padding: 30px 35px 20px 35px; border-bottom: 1px solid #f0f4f8;">
+              <div style="padding: 35px 40px 25px 40px; border-bottom: 1px solid #f1f5f9;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="width: 60px; vertical-align: middle;">
+                    <td style="width: 54px; vertical-align: middle;">
                       ${profilePicHtml}
                     </td>
-                    <td style="padding-left: 15px; vertical-align: middle;">
-                      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #087f6c; display: block; margin-bottom: 4px;">Portfolio Notification</span>
-                      <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #1e293b; letter-spacing: -0.5px;">New Message Received</h2>
+                    <td style="padding-left: 16px; vertical-align: middle;">
+                      <div style="display: inline-block; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 9999px; padding: 4px 12px; margin-bottom: 6px;">
+                        <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #15803d; vertical-align: middle;">✨ Active Inquiry</span>
+                      </div>
+                      <h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; line-height: 1.2;">Incoming Message</h2>
                     </td>
                   </tr>
                 </table>
               </div>
 
               <!-- Body Content -->
-              <div style="padding: 30px 35px 35px 35px;">
-                <p style="font-size: 15px; line-height: 1.6; color: #475569; margin: 0 0 25px 0;">
-                  Hi ${receiverName.split(" ")[0]}, you have received a new inquiry from your online portfolio contact form:
+              <div style="padding: 35px 40px 40px 40px;">
+                <p style="font-size: 15px; line-height: 1.6; color: #475569; margin: 0 0 30px 0;">
+                  Hi ${receiverName.split(" ")[0]}, you've received a fresh inquiry from your digital portfolio's contact gateway:
                 </p>
 
-                <!-- Sender Info Card -->
-                <div style="background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 25px;">
-                  <table style="width: 100%; border-collapse: collapse;">
-                    <tr style="border-bottom: 1px solid #edf2f7;">
-                      <td style="padding: 10px 0; font-size: 12px; font-weight: 600; color: #64748b; width: 90px; text-transform: uppercase; letter-spacing: 0.5px;">From</td>
-                      <td style="padding: 10px 0 10px 10px; font-size: 14px; font-weight: 700; color: #0f172a;">${name}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #edf2f7;">
-                      <td style="padding: 10px 0; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Email</td>
-                      <td style="padding: 10px 0 10px 10px; font-size: 14px; font-weight: 600; color: #087f6c;"><a href="mailto:${email}" style="color: #087f6c; text-decoration: none; font-weight: 700;">${email}</a></td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 10px 0 0 0; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Subject</td>
-                      <td style="padding: 10px 0 0 10px; font-size: 14px; font-style: italic; color: #334155;">${subject || "Project inquiry"}</td>
-                    </tr>
-                  </table>
-                </div>
-
-                <!-- Message Body -->
+                <!-- Modern Detail Cards -->
                 <div style="margin-bottom: 30px;">
-                  <h4 style="margin: 0 0 10px 0; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px;">Message Content</h4>
-                  <div style="background-color: #ffffff; border-left: 4px solid #087f6c; padding: 16px 20px; border-radius: 0 12px 12px 0; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,0.01);">
-                    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">${message}</p>
+                  <!-- Sender Card -->
+                  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; margin-bottom: 12px; display: block;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="width: 24px; vertical-align: middle; font-size: 16px;">👤</td>
+                        <td style="padding-left: 10px; vertical-align: middle;">
+                          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; display: block; margin-bottom: 2px;">Sender Name</span>
+                          <strong style="font-size: 15px; color: #0f172a;">${name}</strong>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <!-- Email Card -->
+                  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; margin-bottom: 12px; display: block;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="width: 24px; vertical-align: middle; font-size: 16px;">✉️</td>
+                        <td style="padding-left: 10px; vertical-align: middle;">
+                          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; display: block; margin-bottom: 2px;">Email Address</span>
+                          <a href="mailto:${email}" style="font-size: 15px; font-weight: 700; color: #0ea5e9; text-decoration: none;">${email}</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <!-- Subject Card -->
+                  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px 20px; display: block;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="width: 24px; vertical-align: middle; font-size: 16px;">🏷️</td>
+                        <td style="padding-left: 10px; vertical-align: middle;">
+                          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; display: block; margin-bottom: 2px;">Subject</span>
+                          <span style="font-size: 15px; font-weight: 600; color: #0f172a;">${subject || "Project inquiry"}</span>
+                        </td>
+                      </tr>
+                    </table>
                   </div>
                 </div>
 
-                <!-- Quick Action Buttons -->
-                <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+                <!-- Message Box Container -->
+                <div style="margin-bottom: 35px;">
+                  <h4 style="margin: 0 0 12px 0; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Message Content</h4>
+                  <div style="background-color: #ffffff; border-left: 4px solid #10b981; padding: 22px 24px; border-radius: 4px 16px 16px 4px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.015);">
+                    <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #334155; white-space: pre-wrap; font-style: normal;">${message}</p>
+                  </div>
+                </div>
+
+                <!-- Call to Action -->
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                   <tr>
                     <td style="text-align: center;">
-                      <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subject || 'Project inquiry')}" style="background-color: #087f6c; color: #ffffff; padding: 12px 30px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 8px; display: inline-block; box-shadow: 0 4px 12px rgba(8, 127, 108, 0.2);">
+                      <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subject || 'Project inquiry')}" style="background: linear-gradient(90deg, #0ea5e9 0%, #10b981 100%); color: #ffffff; padding: 14px 36px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 12px; display: inline-block; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2); letter-spacing: 0.2px;">
                         ✉️ Quick Reply to ${name.split(" ")[0]}
                       </a>
                     </td>
@@ -278,13 +306,15 @@ app.post("/api/contact", async (req, res) => {
                 </table>
               </div>
 
-              <!-- Footer -->
-              <div style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #f0f4f8;">
-                <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #64748b;">
-                  This is an automated message sent from your online portfolio.
-                </p>
-                <p style="margin: 0; font-size: 10px; color: #94a3b8;">
-                  Powered by MERN Portfolio Engine • &copy; ${new Date().getFullYear()} ${receiverName}. All rights reserved.
+              <!-- Footer Section -->
+              <div style="background-color: #f8fafc; padding: 30px 40px; text-align: center; border-top: 1px solid #f1f5f9;">
+                <div style="display: inline-block; background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); border-radius: 9999px; padding: 6px 18px; margin-bottom: 12px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1);">
+                  <span style="font-size: 11px; font-weight: 700; color: #ffffff; letter-spacing: 0.8px; text-transform: uppercase;">🔒 Secured & Delivered by ${receiverName}</span>
+                </div>
+                <p style="margin: 0; font-size: 10px; color: #94a3b8; line-height: 1.6; font-weight: 500;">
+                  This secure transmission was validated & processed through your portfolio server.
+                  <br />
+                  &copy; ${new Date().getFullYear()} ${receiverName}. All rights reserved.
                 </p>
               </div>
             </div>
@@ -293,9 +323,108 @@ app.post("/api/contact", async (req, res) => {
         attachments: attachments
       };
 
-      transporter.sendMail(mailOptions)
-        .then((info) => console.log("✉️ Email notification sent successfully:", info.messageId))
-        .catch((err) => console.error("❌ Failed to send email notification:", err.message));
+      // B. Mail options for the Sender (Visitor auto-reply)
+      const autoReplyMailOptions = {
+        from: `"${receiverName}" <${process.env.SMTP_USER}>`,
+        to: String(email).trim(),
+        subject: `✨ Thanks for reaching out, ${name.split(" ")[0]}!`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 50px 20px; color: #0f172a; margin: 0;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); border: 1px solid #e2e8f0;">
+              
+              <!-- Glowing Top Gradient Bar -->
+              <div style="background: linear-gradient(90deg, #0ea5e9 0%, #10b981 100%); height: 6px;"></div>
+              
+              <!-- Header Section -->
+              <div style="padding: 35px 40px 25px 40px; border-bottom: 1px solid #f1f5f9;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="width: 54px; vertical-align: middle;">
+                      ${profilePicHtml}
+                    </td>
+                    <td style="padding-left: 16px; vertical-align: middle;">
+                      <div style="display: inline-block; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 9999px; padding: 4px 12px; margin-bottom: 6px;">
+                        <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #15803d; vertical-align: middle;">👋 HELLO THERE</span>
+                      </div>
+                      <h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; line-height: 1.2;">Connection Established</h2>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Body Content -->
+              <div style="padding: 35px 40px 40px 40px;">
+                <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.3px;">Hi ${name.split(" ")[0]},</h3>
+                
+                <p style="font-size: 15px; line-height: 1.7; color: #475569; margin: 0 0 20px 0;">
+                  Thank you so much for visiting my online portfolio and reaching out! I'm thrilled that you got in touch.
+                </p>
+                <p style="font-size: 15px; line-height: 1.7; color: #475569; margin: 0 0 28px 0;">
+                  I have successfully received your inquiry regarding "<strong>${subject || "Project inquiry"}</strong>". I review my inbox daily and will get back to you personally within the next **24 hours** to discuss this further.
+                </p>
+
+                <!-- Received Copy Highlight -->
+                <div style="margin-bottom: 35px;">
+                  <h4 style="margin: 0 0 10px 0; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Copy of Your Message</h4>
+                  <div style="background-color: #f8fafc; border-left: 4px solid #0ea5e9; padding: 18px 20px; border-radius: 4px 16px 16px 4px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                    <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #475569; white-space: pre-wrap; font-style: italic;">"${message}"</p>
+                  </div>
+                </div>
+
+                <!-- Professional Sign-off -->
+                <div style="margin-bottom: 35px; border-top: 1px solid #f1f5f9; padding-top: 25px;">
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="vertical-align: top;">
+                        <p style="margin: 0 0 4px 0; font-size: 14px; color: #64748b;">Best Regards,</p>
+                        <strong style="font-size: 16px; color: #0f172a; display: block; margin-bottom: 2px;">${receiverName}</strong>
+                        <span style="font-size: 13px; color: #10b981; font-weight: 600;">Python Developer & Web Builder</span>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Social Engagement CTA Pills -->
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                  <tr>
+                    <td style="text-align: center;">
+                      <a href="https://github.com/amrutanshu2003" style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; font-size: 13px; font-weight: 700; text-decoration: none; border-radius: 10px; display: inline-block; margin-right: 8px; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);">
+                        💻 View my GitHub
+                      </a>
+                      <a href="https://www.linkedin.com/in/amrutanshu-panda-" style="background-color: #0077b5; color: #ffffff; padding: 12px 24px; font-size: 13px; font-weight: 700; text-decoration: none; border-radius: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(0, 119, 181, 0.15);">
+                        🔗 Connect on LinkedIn
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Footer Section -->
+              <div style="background-color: #f8fafc; padding: 30px 40px; text-align: center; border-top: 1px solid #f1f5f9;">
+                <div style="display: inline-block; background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); border-radius: 9999px; padding: 6px 18px; margin-bottom: 12px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1);">
+                  <span style="font-size: 11px; font-weight: 700; color: #ffffff; letter-spacing: 0.8px; text-transform: uppercase;">🔒 Secured & Delivered by ${receiverName}</span>
+                </div>
+                <p style="margin: 0; font-size: 10px; color: #94a3b8; line-height: 1.6; font-weight: 500;">
+                  This is an automated auto-acknowledgement. You do not need to reply to this message.
+                  <br />
+                  &copy; ${new Date().getFullYear()} ${receiverName}. All rights reserved.
+                </p>
+              </div>
+            </div>
+          </div>
+        `,
+        attachments: attachments
+      };
+
+      // Send owner notification
+      transporter.sendMail(notificationMailOptions)
+        .then((info) => console.log("✉️ Owner Email notification sent successfully:", info.messageId))
+        .catch((err) => console.error("❌ Failed to send owner email notification:", err.message));
+
+      // Send auto-reply acknowledgement to the visitor
+      transporter.sendMail(autoReplyMailOptions)
+        .then((info) => console.log("✉️ Visitor Auto-Reply sent successfully:", info.messageId))
+        .catch((err) => console.error("❌ Failed to send visitor auto-reply:", err.message));
     }
 
     return res.json({ ok: true });
