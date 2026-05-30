@@ -238,7 +238,7 @@ def api_contact():
         send_contact_email(name, email, subject, message)
     except Exception as e:
         print(f"SMTP Error: {e}")
-        return jsonify({"ok": False, "error": "Message saved, but email sending failed. Please check backend SMTP settings."}), 500
+        return jsonify({"ok": False, "error": f"Message saved, but email sending failed: {str(e)}"}), 500
 
     return jsonify({"ok": True})
 
