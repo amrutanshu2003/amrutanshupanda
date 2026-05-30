@@ -1,6 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
-import * as THREE from "three";
+import { useEffect, useState } from "react";
 import { api } from "./api";
 
 const fallbackProfile = {
@@ -33,116 +32,49 @@ const fallbackProfile = {
   ]
 };
 
-function HeroScene() {
-  const mountRef = useRef(null);
+function ThemeToggle() {
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+  const isLight = theme === "light";
 
   useEffect(() => {
-    const mount = mountRef.current;
-    if (!mount) return undefined;
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(0, 0.35, 6.8);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    mount.appendChild(renderer.domElement);
-
-    const group = new THREE.Group();
-    scene.add(group);
-
-    const geometry = new THREE.IcosahedronGeometry(1.7, 2);
-    const material = new THREE.MeshStandardMaterial({
-      color: "#59d6b4",
-      roughness: 0.28,
-      metalness: 0.42,
-      emissive: "#0d2b24",
-      emissiveIntensity: 0.28
-    });
-    const core = new THREE.Mesh(geometry, material);
-    group.add(core);
-
-    const wire = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(1.82, 1),
-      new THREE.MeshBasicMaterial({ color: "#fff0c2", wireframe: true, transparent: true, opacity: 0.28 })
-    );
-    group.add(wire);
-
-    const ringMaterial = new THREE.MeshBasicMaterial({
-      color: "#ff7a59",
-      transparent: true,
-      opacity: 0.42,
-      side: THREE.DoubleSide
-    });
-    const ringOne = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.012, 12, 110), ringMaterial);
-    const ringTwo = ringOne.clone();
-    ringOne.rotation.x = Math.PI / 2.6;
-    ringTwo.rotation.y = Math.PI / 2.5;
-    group.add(ringOne, ringTwo);
-
-    const particlePositions = Array.from({ length: 210 }, () => (Math.random() - 0.5) * 8);
-    const particles = new THREE.Points(
-      new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(particlePositions, 3)),
-      new THREE.PointsMaterial({ color: "#f7c873", size: 0.025, transparent: true, opacity: 0.62 })
-    );
-    scene.add(particles);
-
-    scene.add(new THREE.AmbientLight("#fff6de", 1.5));
-    const keyLight = new THREE.PointLight("#d9fff3", 4.5, 18);
-    keyLight.position.set(3.5, 4, 5);
-    scene.add(keyLight);
-    const warmLight = new THREE.PointLight("#ff8a5c", 2.8, 14);
-    warmLight.position.set(-3, -2, 4);
-    scene.add(warmLight);
-
-    const resize = () => {
-      const { width, height } = mount.getBoundingClientRect();
-      const nextWidth = Math.max(width, 1);
-      const nextHeight = Math.max(height, 1);
-      camera.aspect = nextWidth / nextHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(nextWidth, nextHeight, false);
-    };
-
-    let frameId = 0;
-    const clock = new THREE.Clock();
-    const animate = () => {
-      const time = clock.getElapsedTime();
-      group.rotation.y = time * 0.32;
-      group.rotation.x = Math.sin(time * 0.55) * 0.16;
-      wire.rotation.z = -time * 0.22;
-      particles.rotation.y = -time * 0.045;
-      renderer.render(scene, camera);
-      frameId = window.requestAnimationFrame(animate);
-    };
-
-    resize();
-    animate();
-    window.addEventListener("resize", resize);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      window.removeEventListener("resize", resize);
-      mount.removeChild(renderer.domElement);
-      geometry.dispose();
-      material.dispose();
-      wire.geometry.dispose();
-      wire.material.dispose();
-      ringOne.geometry.dispose();
-      ringMaterial.dispose();
-      particles.geometry.dispose();
-      particles.material.dispose();
-      renderer.dispose();
-    };
-  }, []);
-
-  return <div className="hero-scene" ref={mountRef} aria-hidden="true" />;
+  return (
+    <button
+      className="theme-toggle"
+      type="button"
+      onClick={() => setTheme(isLight ? "dark" : "light")}
+      aria-label={isLight ? "Switch to dark mode" : "Switch to light mode"}
+    >
+      {isLight ? (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 14.5A7.6 7.6 0 0 1 9.5 3 9 9 0 1 0 21 14.5Z" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+        </svg>
+      )}
+      <span className="nav-tooltip">{isLight ? "Dark Mode" : "Light Mode"}</span>
+    </button>
+  );
 }
 
 function Home() {
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState("");
+  const [copiedId, setCopiedId] = useState("");
+
+  const handleCopy = (text, id, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(""), 2000);
+  };
 
   useEffect(() => {
     api("/profile")
@@ -152,6 +84,24 @@ function Home() {
         setStatus(`Demo content loaded. API says: ${e.message}`);
       });
   }, []);
+
+  useEffect(() => {
+    if (profile) {
+      const imgData = profile.profile_image_data;
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      if (imgData) {
+        link.href = imgData;
+      } else {
+        const letter = profile.name?.slice(0, 1) || "A";
+        link.href = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2359d6b4"/><text x="50" y="65" font-family="Outfit, sans-serif" font-size="50" font-weight="bold" fill="%2312120f" text-anchor="middle">${letter}</text></svg>`;
+      }
+    }
+  }, [profile]);
 
   const submitContact = async (e) => {
     e.preventDefault();
@@ -177,13 +127,69 @@ function Home() {
     <div className="page">
       <header className="topbar">
         <a className="brand" href="#home" aria-label="Portfolio home">
-          <span>{profile.name?.slice(0, 1) || "A"}</span>
+          <span>
+            {profile.profile_image_data ? (
+              <img src={profile.profile_image_data} alt={profile.name} className="brand-logo-img" />
+            ) : (
+              profile.name?.slice(0, 1) || "A"
+            )}
+          </span>
           {profile.name}
         </a>
         <nav>
-          <a href="#projects">Projects</a>
-          <a href="#contact">Contact</a>
-          <NavLink to="/admin">Admin</NavLink>
+          <a href="#projects" className="nav-item" aria-label="Projects">
+            <svg viewBox="0 0 24 24" className="nav-icon" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <span className="nav-tooltip">Projects</span>
+          </a>
+          <a href="#contact" className="nav-item" aria-label="Contact">
+            <svg viewBox="0 0 24 24" className="nav-icon" aria-hidden="true">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            <span className="nav-tooltip">Contact</span>
+          </a>
+          <NavLink to="/admin" className="nav-item" aria-label="Admin">
+            <svg viewBox="0 0 24 24" className="nav-icon" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            <span className="nav-tooltip">Admin</span>
+          </NavLink>
+
+          <span className="nav-divider"></span>
+
+          <a href={`mailto:${profile.email || "amrutanshu20003@gmail.com"}`} className="nav-item social-mail" target="_blank" rel="noreferrer" aria-label="Email">
+            <svg viewBox="52 42 88 66" className="nav-icon" aria-hidden="true">
+              <path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6"/>
+              <path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15"/>
+              <path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2"/>
+              <path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92"/>
+              <path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2"/>
+            </svg>
+            <span className="nav-tooltip">Email Me</span>
+          </a>
+          
+          <a href="https://github.com/amrutanshu2003" className="nav-item social-github" target="_blank" rel="noreferrer" aria-label="GitHub">
+            <svg viewBox="0 0 24 24" className="nav-icon" fill="currentColor" aria-hidden="true">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+            </svg>
+            <span className="nav-tooltip">GitHub</span>
+          </a>
+
+          <a href="https://www.linkedin.com/in/amrutanshu-panda-" className="nav-item social-linkedin" target="_blank" rel="noreferrer" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24" className="nav-icon" fill="currentColor" aria-hidden="true">
+              <path d="M22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003zM7.12 20.452H3.555V9h3.565v11.452zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm15.11 13.019h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286z" />
+            </svg>
+            <span className="nav-tooltip">LinkedIn</span>
+          </a>
+
+          <span className="nav-divider"></span>
+
+          <ThemeToggle />
         </nav>
       </header>
 
@@ -203,14 +209,19 @@ function Home() {
           </div>
         </div>
         <div className="hero-visual">
-          <HeroScene />
-          <div className="orbit-card card-top">
-            <span>Stack</span>
-            <strong>MERN + Python</strong>
-          </div>
-          <div className="orbit-card card-bottom">
-            <span>Focus</span>
-            <strong>Clean UX</strong>
+          <div className="profile-image-wrapper">
+            <div className="profile-image-glow"></div>
+            <div className="profile-image-ring"></div>
+            <div className="profile-image-container" aria-label={`${profile.name} profile photo`}>
+              {profile.profile_image_data ? (
+                <img src={profile.profile_image_data} alt={profile.name} />
+              ) : (
+                <svg viewBox="0 0 24 24" className="profile-placeholder-svg" aria-hidden="true">
+                  <path d="M20 21a8 8 0 0 0-16 0" />
+                  <circle cx="12" cy="8" r="4" />
+                </svg>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -253,18 +264,127 @@ function Home() {
         </section>
 
         <section className="panel contact-panel" id="contact">
-          <div className="section-heading">
-            <span>Contact</span>
-            <h3>Let's build something useful</h3>
+          <div className="contact-layout">
+            <div className="contact-info">
+              <div className="section-heading">
+                <span>Contact</span>
+                <h3>Let's build something useful</h3>
+              </div>
+              <p className="contact-desc">
+                Feel free to reach out for collaborations, project inquiries, or just to say hello! I'm always open to discussing new opportunities.
+              </p>
+              
+              <div className="contact-socials">
+                <a href={`mailto:${profile.email || "amrutanshu20003@gmail.com"}`} className="contact-social-item social-mail" target="_blank" rel="noreferrer" aria-label="Email">
+                  <div className="social-icon-wrapper">
+                    <svg viewBox="52 42 88 66" className="social-icon" aria-hidden="true">
+                      <path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6"/>
+                      <path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15"/>
+                      <path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2"/>
+                      <path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92"/>
+                      <path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2"/>
+                    </svg>
+                  </div>
+                  <div className="social-details">
+                    <span>Email Me Directly</span>
+                    <strong>{profile.email || "amrutanshu20003@gmail.com"}</strong>
+                  </div>
+                  <button 
+                    className="copy-card-btn" 
+                    onClick={(e) => handleCopy(profile.email || "amrutanshu20003@gmail.com", "email", e)}
+                    aria-label="Copy Email"
+                  >
+                    {copiedId === "email" ? (
+                      <svg viewBox="0 0 24 24" className="copy-icon success" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="copy-icon" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    )}
+                    <span className="copy-tooltip">{copiedId === "email" ? "Copied!" : "Copy"}</span>
+                  </button>
+                </a>
+
+                <a href="https://github.com/amrutanshu2003" className="contact-social-item social-github" target="_blank" rel="noreferrer" aria-label="GitHub">
+                  <div className="social-icon-wrapper">
+                    <svg viewBox="0 0 24 24" className="social-icon" fill="currentColor" aria-hidden="true">
+                      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                    </svg>
+                  </div>
+                  <div className="social-details">
+                    <span>Follow on GitHub</span>
+                    <strong>github.com/amrutanshu2003</strong>
+                  </div>
+                  <button 
+                    className="copy-card-btn" 
+                    onClick={(e) => handleCopy("https://github.com/amrutanshu2003", "github", e)}
+                    aria-label="Copy GitHub Link"
+                  >
+                    {copiedId === "github" ? (
+                      <svg viewBox="0 0 24 24" className="copy-icon success" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="copy-icon" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    )}
+                    <span className="copy-tooltip">{copiedId === "github" ? "Copied!" : "Copy"}</span>
+                  </button>
+                </a>
+
+                <a href="https://www.linkedin.com/in/amrutanshu-panda-" className="contact-social-item social-linkedin" target="_blank" rel="noreferrer" aria-label="LinkedIn">
+                  <div className="social-icon-wrapper">
+                    <svg viewBox="0 0 24 24" className="social-icon" fill="currentColor" aria-hidden="true">
+                      <path d="M22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003zM7.12 20.452H3.555V9h3.565v11.452zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm15.11 13.019h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286z" />
+                    </svg>
+                  </div>
+                  <div className="social-details">
+                    <span>Connect on LinkedIn</span>
+                    <strong>amrutanshu-panda-</strong>
+                  </div>
+                  <button 
+                    className="copy-card-btn" 
+                    onClick={(e) => handleCopy("https://www.linkedin.com/in/amrutanshu-panda-", "linkedin", e)}
+                    aria-label="Copy LinkedIn Link"
+                  >
+                    {copiedId === "linkedin" ? (
+                      <svg viewBox="0 0 24 24" className="copy-icon success" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="copy-icon" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    )}
+                    <span className="copy-tooltip">{copiedId === "linkedin" ? "Copied!" : "Copy"}</span>
+                  </button>
+                </a>
+              </div>
+            </div>
+
+            <div className="contact-form-container">
+              <form onSubmit={submitContact} className="form">
+                <input name="name" placeholder="Your name" required />
+                <input name="email" type="email" placeholder="you@example.com" required />
+                <input name="subject" placeholder="Project inquiry" />
+                <textarea name="message" rows={5} placeholder="Tell me about your project..." required />
+                <button type="submit">
+                  Send Message
+                  <svg viewBox="0 0 24 24" className="submit-btn-icon" aria-hidden="true">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </button>
+              </form>
+              {status && <p className="status">{status}</p>}
+            </div>
           </div>
-          <form onSubmit={submitContact} className="form">
-            <input name="name" placeholder="Your name" required />
-            <input name="email" type="email" placeholder="you@example.com" required />
-            <input name="subject" placeholder="Project inquiry" />
-            <textarea name="message" rows={5} placeholder="Tell me about your project..." required />
-            <button type="submit">Send Message</button>
-          </form>
-          {status && <p className="status">{status}</p>}
         </section>
       </main>
     </div>
@@ -289,6 +409,24 @@ function Admin() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (profile) {
+      const imgData = profile.profile_image_data;
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      if (imgData) {
+        link.href = imgData;
+      } else {
+        const letter = profile.name?.slice(0, 1) || "A";
+        link.href = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2359d6b4"/><text x="50" y="65" font-family="Outfit, sans-serif" font-size="50" font-weight="bold" fill="%2312120f" text-anchor="middle">${letter}</text></svg>`;
+      }
+    }
+  }, [profile]);
 
   const saveProfile = async (e) => {
     e.preventDefault();
@@ -330,11 +468,24 @@ function Admin() {
     <div className="page admin-page">
       <header className="topbar">
         <a className="brand" href="/admin">
-          <span>A</span>
+          <span>
+            {profile.profile_image_data ? (
+              <img src={profile.profile_image_data} alt={profile.name} className="brand-logo-img" />
+            ) : (
+              profile.name?.slice(0, 1) || "A"
+            )}
+          </span>
           Admin Panel
         </a>
         <nav>
-          <NavLink to="/">Back</NavLink>
+          <NavLink to="/" className="nav-item" aria-label="Back">
+            <svg viewBox="0 0 24 24" className="nav-icon" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            <span className="nav-tooltip">Back</span>
+          </NavLink>
+          <ThemeToggle />
         </nav>
       </header>
 
