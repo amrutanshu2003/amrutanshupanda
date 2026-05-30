@@ -208,6 +208,8 @@ app.post("/api/contact", async (req, res) => {
         profilePicHtml = `<div style="width: 50px; height: 50px; border-radius: 50%; background: #087f6c; color: #ffffff; text-align: center; line-height: 50px; font-size: 22px; font-weight: bold; font-family: sans-serif; display: block;">${letter}</div>`;
       }
 
+      profilePicHtml = `<a href="${FRONTEND_ORIGIN}" target="_blank" style="text-decoration: none; display: inline-block; border-radius: 50%;">${profilePicHtml}</a>`;
+
       // A. Mail options for Amrutanshu Panda (Owner notification)
       const notificationMailOptions = {
         from: `"${receiverName} Portfolio" <${process.env.SMTP_USER}>`,
@@ -384,19 +386,24 @@ app.post("/api/contact", async (req, res) => {
                   </table>
                 </div>
 
-                <!-- Social Engagement CTA Pills -->
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                  <tr>
-                    <td style="text-align: center;">
-                      <a href="https://github.com/amrutanshu2003" style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; font-size: 13px; font-weight: 700; text-decoration: none; border-radius: 10px; display: inline-block; margin-right: 8px; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);">
-                        💻 View my GitHub
-                      </a>
-                      <a href="https://www.linkedin.com/in/amrutanshu-panda-" style="background-color: #0077b5; color: #ffffff; padding: 12px 24px; font-size: 13px; font-weight: 700; text-decoration: none; border-radius: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(0, 119, 181, 0.15);">
-                        🔗 Connect on LinkedIn
-                      </a>
-                    </td>
-                  </tr>
-                </table>
+                <!-- Social Engagement CTA Icons Only -->
+                <div style="text-align: center; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 25px;">
+                  <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 16px;">Connect with Me</span>
+                  <table style="margin: 0 auto; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 0 12px;">
+                        <a href="https://github.com/amrutanshu2003" target="_blank" style="display: block; text-decoration: none;">
+                          <img src="https://img.icons8.com/ios-filled/100/0f172a/github.png" width="36" height="36" style="width: 36px; height: 36px; display: block; border: 0;" alt="GitHub" />
+                        </a>
+                      </td>
+                      <td style="padding: 0 12px;">
+                        <a href="https://www.linkedin.com/in/amrutanshu-panda-" target="_blank" style="display: block; text-decoration: none;">
+                          <img src="https://img.icons8.com/ios-filled/100/0274b3/linkedin.png" width="36" height="36" style="width: 36px; height: 36px; display: block; border: 0;" alt="LinkedIn" />
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
               </div>
 
               <!-- Footer Section -->
