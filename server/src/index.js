@@ -329,7 +329,7 @@ app.post("/api/contact", async (req, res) => {
       const autoReplyMailOptions = {
         from: `"${receiverName}" <${process.env.SMTP_USER}>`,
         to: String(email).trim(),
-        subject: `✨ Thanks for reaching out, ${name.split(" ")[0]}!`,
+        subject: `📩 Thanks for reaching out, ${name.split(" ")[0]}!`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 50px 20px; color: #0f172a; margin: 0;">
             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); border: 1px solid #e2e8f0;">
