@@ -67,6 +67,13 @@ function Home() {
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState("");
   const [copiedId, setCopiedId] = useState("");
+  const [heroImgFailed, setHeroImgFailed] = useState(false);
+  const [brandImgFailed, setBrandImgFailed] = useState(false);
+
+  useEffect(() => {
+    setHeroImgFailed(false);
+    setBrandImgFailed(false);
+  }, [profile]);
 
   const handleCopy = (text, id, e) => {
     e.preventDefault();
@@ -77,7 +84,7 @@ function Home() {
   };
 
   useEffect(() => {
-    api("/profile")
+    api("/profile?t=" + Date.now())
       .then(setProfile)
       .catch((e) => {
         setProfile(fallbackProfile);
@@ -105,7 +112,8 @@ function Home() {
 
   const submitContact = async (e) => {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
+    const formEl = e.currentTarget;
+    const form = new FormData(formEl);
     const payload = {
       name: form.get("name"),
       email: form.get("email"),
@@ -115,7 +123,7 @@ function Home() {
     try {
       await api("/contact", { method: "POST", body: JSON.stringify(payload) });
       setStatus("Message sent and saved.");
-      e.currentTarget.reset();
+      formEl.reset();
     } catch (err) {
       setStatus(err.message);
     }
@@ -128,8 +136,13 @@ function Home() {
       <header className="topbar">
         <a className="brand" href="#home" aria-label="Portfolio home">
           <span>
-            {profile.profile_image_data ? (
-              <img src={profile.profile_image_data} alt={profile.name} className="brand-logo-img" />
+            {profile.profile_image_data && !brandImgFailed ? (
+              <img
+                src={profile.profile_image_data}
+                alt={profile.name}
+                className="brand-logo-img"
+                onError={() => setBrandImgFailed(true)}
+              />
             ) : (
               profile.name?.slice(0, 1) || "A"
             )}
@@ -164,15 +177,15 @@ function Home() {
 
           <a href={`mailto:${profile.email || "amrutanshu20003@gmail.com"}`} className="nav-item social-mail" target="_blank" rel="noreferrer" aria-label="Email">
             <svg viewBox="52 42 88 66" className="nav-icon" aria-hidden="true">
-              <path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6"/>
-              <path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15"/>
-              <path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2"/>
-              <path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92"/>
-              <path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2"/>
+              <path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6" />
+              <path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15" />
+              <path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2" />
+              <path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92" />
+              <path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2" />
             </svg>
             <span className="nav-tooltip">Email Me</span>
           </a>
-          
+
           <a href="https://github.com/amrutanshu2003" className="nav-item social-github" target="_blank" rel="noreferrer" aria-label="GitHub">
             <svg viewBox="0 0 24 24" className="nav-icon" fill="currentColor" aria-hidden="true">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
@@ -210,11 +223,36 @@ function Home() {
         </div>
         <div className="hero-visual">
           <div className="profile-image-wrapper">
+            <div className="profile-social-orbit">
+              <a href={`mailto:${profile.email || "amrutanshu20003@gmail.com"}`} className="orbit-item social-mail" target="_blank" rel="noreferrer" aria-label="Email">
+                <svg viewBox="52 42 88 66" aria-hidden="true">
+                  <path fill="#4285f4" style={{ fill: "#4285f4" }} d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6" />
+                  <path fill="#34a853" style={{ fill: "#34a853" }} d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15" />
+                  <path fill="#fbbc04" style={{ fill: "#fbbc04" }} d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2" />
+                  <path fill="#ea4335" style={{ fill: "#ea4335" }} d="M72 74V48l24 18 24-18v26L96 92" />
+                  <path fill="#c5221f" style={{ fill: "#c5221f" }} d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2" />
+                </svg>
+              </a>
+              <a href="https://github.com/amrutanshu2003" className="orbit-item social-github" target="_blank" rel="noreferrer" aria-label="GitHub">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+              </a>
+              <a href="https://www.linkedin.com/in/amrutanshu-panda-" className="orbit-item social-linkedin" target="_blank" rel="noreferrer" aria-label="LinkedIn">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003zM7.12 20.452H3.555V9h3.565v11.452zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm15.11 13.019h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286z" />
+                </svg>
+              </a>
+            </div>
             <div className="profile-image-glow"></div>
             <div className="profile-image-ring"></div>
             <div className="profile-image-container" aria-label={`${profile.name} profile photo`}>
-              {profile.profile_image_data ? (
-                <img src={profile.profile_image_data} alt={profile.name} />
+              {profile.profile_image_data && !heroImgFailed ? (
+                <img
+                  src={profile.profile_image_data}
+                  alt={profile.name}
+                  onError={() => setHeroImgFailed(true)}
+                />
               ) : (
                 <svg viewBox="0 0 24 24" className="profile-placeholder-svg" aria-hidden="true">
                   <path d="M20 21a8 8 0 0 0-16 0" />
@@ -273,24 +311,24 @@ function Home() {
               <p className="contact-desc">
                 Feel free to reach out for collaborations, project inquiries, or just to say hello! I'm always open to discussing new opportunities.
               </p>
-              
+
               <div className="contact-socials">
                 <a href={`mailto:${profile.email || "amrutanshu20003@gmail.com"}`} className="contact-social-item social-mail" target="_blank" rel="noreferrer" aria-label="Email">
                   <div className="social-icon-wrapper">
                     <svg viewBox="52 42 88 66" className="social-icon" aria-hidden="true">
-                      <path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6"/>
-                      <path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15"/>
-                      <path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2"/>
-                      <path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92"/>
-                      <path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2"/>
+                      <path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6" />
+                      <path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15" />
+                      <path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2" />
+                      <path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92" />
+                      <path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2" />
                     </svg>
                   </div>
                   <div className="social-details">
                     <span>Email Me Directly</span>
                     <strong>{profile.email || "amrutanshu20003@gmail.com"}</strong>
                   </div>
-                  <button 
-                    className="copy-card-btn" 
+                  <button
+                    className="copy-card-btn"
                     onClick={(e) => handleCopy(profile.email || "amrutanshu20003@gmail.com", "email", e)}
                     aria-label="Copy Email"
                   >
@@ -318,8 +356,8 @@ function Home() {
                     <span>Follow on GitHub</span>
                     <strong>github.com/amrutanshu2003</strong>
                   </div>
-                  <button 
-                    className="copy-card-btn" 
+                  <button
+                    className="copy-card-btn"
                     onClick={(e) => handleCopy("https://github.com/amrutanshu2003", "github", e)}
                     aria-label="Copy GitHub Link"
                   >
@@ -347,8 +385,8 @@ function Home() {
                     <span>Connect on LinkedIn</span>
                     <strong>amrutanshu-panda-</strong>
                   </div>
-                  <button 
-                    className="copy-card-btn" 
+                  <button
+                    className="copy-card-btn"
                     onClick={(e) => handleCopy("https://www.linkedin.com/in/amrutanshu-panda-", "linkedin", e)}
                     aria-label="Copy LinkedIn Link"
                   >
@@ -395,10 +433,43 @@ function Admin() {
   const [profile, setProfile] = useState(null);
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("");
+  const [brandImgFailed, setBrandImgFailed] = useState(false);
+  const [previewImgFailed, setPreviewImgFailed] = useState(false);
+
+  // Premium Custom Cropper States
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState("");
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imgSize, setImgSize] = useState({ w: 250, h: 250 });
+
+  useEffect(() => {
+    setBrandImgFailed(false);
+    setPreviewImgFailed(false);
+  }, [profile]);
+
+  useEffect(() => {
+    if (!rawImageSrc) return;
+    const img = new Image();
+    img.onload = () => {
+      const ratio = img.width / img.height;
+      const w = ratio > 1 ? 250 * ratio : 250;
+      const h = ratio > 1 ? 250 : 250 / ratio;
+      setImgSize({ w, h });
+      setZoom(1);
+      setOffset({ x: 0, y: 0 });
+    };
+    img.src = rawImageSrc;
+  }, [rawImageSrc]);
 
   const load = async () => {
     try {
-      const [p, m] = await Promise.all([api("/profile"), api("/admin/messages")]);
+      const [p, m] = await Promise.all([
+        api("/profile?t=" + Date.now()),
+        api("/admin/messages?t=" + Date.now())
+      ]);
       setProfile(p);
       setMessages(m.messages || []);
     } catch (e) {
@@ -427,6 +498,91 @@ function Admin() {
       }
     }
   }, [profile]);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setStatus("Image too large. Max size is 10MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setRawImageSrc(reader.result);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ""; // Reset input so same file can be cropped again
+  };
+
+  const handleDragStart = (e) => {
+    setIsDragging(true);
+    const clientX = e.clientX || e.touches?.[0]?.clientX;
+    const clientY = e.clientY || e.touches?.[0]?.clientY;
+    setDragStart({ x: clientX - offset.x, y: clientY - offset.y });
+  };
+
+  const handleDragMove = (e) => {
+    if (!isDragging) return;
+    const clientX = e.clientX || e.touches?.[0]?.clientX;
+    const clientY = e.clientY || e.touches?.[0]?.clientY;
+    setOffset({
+      x: clientX - dragStart.x,
+      y: clientY - dragStart.y
+    });
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  const applyCrop = () => {
+    const img = document.getElementById("cropper-source-img");
+    if (!img) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 500;
+    canvas.height = 500;
+    const ctx = canvas.getContext("2d");
+
+    // Center of image inside viewport of 250x250 is at:
+    const cx = 250 / 2 + offset.x;
+    const cy = 250 / 2 + offset.y;
+
+    // Zoomed width and height are:
+    const w = imgSize.w * zoom;
+    const h = imgSize.h * zoom;
+
+    // Top-left coordinate of zoomed and panned image inside viewport:
+    const x = cx - w / 2;
+    const y = cy - h / 2;
+
+    // Scale coordinates to canvas of size 500x500
+    const scale = 500 / 250;
+    const drawX = x * scale;
+    const drawY = y * scale;
+    const drawW = w * scale;
+    const drawH = h * scale;
+
+    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+    const croppedBase64 = canvas.toDataURL("image/jpeg", 0.9);
+    setProfile((prev) => ({
+      ...prev,
+      profile_image_data: croppedBase64
+    }));
+    setPreviewImgFailed(false); // Reset fail-safe state since image changed
+    setCropModalOpen(false);
+  };
+
+  const handleRemoveImage = () => {
+    setProfile((prev) => ({
+      ...prev,
+      profile_image_data: ""
+    }));
+  };
 
   const saveProfile = async (e) => {
     e.preventDefault();
@@ -469,8 +625,13 @@ function Admin() {
       <header className="topbar">
         <a className="brand" href="/admin">
           <span>
-            {profile.profile_image_data ? (
-              <img src={profile.profile_image_data} alt={profile.name} className="brand-logo-img" />
+            {profile.profile_image_data && !brandImgFailed ? (
+              <img
+                src={profile.profile_image_data}
+                alt={profile.name}
+                className="brand-logo-img"
+                onError={() => setBrandImgFailed(true)}
+              />
             ) : (
               profile.name?.slice(0, 1) || "A"
             )}
@@ -495,12 +656,56 @@ function Admin() {
           <h3>Edit Portfolio Content</h3>
         </div>
         <form className="form" onSubmit={saveProfile}>
-          <input name="name" defaultValue={profile.name} required />
-          <input name="headline" defaultValue={profile.headline} required />
-          <input name="email" type="email" defaultValue={profile.email} required />
-          <textarea name="about" rows={4} defaultValue={profile.about} required />
-          <input name="skills" defaultValue={(profile.skills || []).join(", ")} />
-          <button type="submit">Save</button>
+          <div className="image-uploader-section">
+            <label className="uploader-label">Profile Picture</label>
+            <div className="uploader-container">
+              <div className="uploader-preview">
+                {profile.profile_image_data && !previewImgFailed ? (
+                  <img
+                    src={profile.profile_image_data}
+                    alt="Profile Preview"
+                    className="preview-img"
+                    onError={() => setPreviewImgFailed(true)}
+                  />
+                ) : (
+                  <div className="preview-placeholder">
+                    <span>{profile.name?.slice(0, 1) || "A"}</span>
+                  </div>
+                )}
+              </div>
+              <div className="uploader-controls">
+                <label className="btn-upload" htmlFor="profile-image-upload">
+                  <svg viewBox="0 0 24 24" className="icon-upload" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                  </svg>
+                  Choose Photo
+                </label>
+                <input
+                  id="profile-image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{ display: "none" }}
+                />
+                {profile.profile_image_data && (
+                  <button
+                    type="button"
+                    className="btn-remove"
+                    onClick={handleRemoveImage}
+                  >
+                    Remove Photo
+                  </button>
+                )}
+                <p className="upload-help">PNG, JPG, WebP, or SVG. Max 4MB.</p>
+              </div>
+            </div>
+          </div>
+          <input name="name" defaultValue={profile.name} placeholder="Name" required />
+          <input name="headline" defaultValue={profile.headline} placeholder="Headline" required />
+          <input name="email" type="email" defaultValue={profile.email} placeholder="Email" required />
+          <textarea name="about" rows={4} defaultValue={profile.about} placeholder="About Me" required />
+          <input name="skills" defaultValue={(profile.skills || []).join(", ")} placeholder="Skills (comma-separated)" />
+          <button type="submit">Save Changes</button>
         </form>
         {status && <p className="status">{status}</p>}
       </section>
@@ -526,6 +731,70 @@ function Admin() {
           {messages.length === 0 && <p>No messages yet.</p>}
         </div>
       </section>
+
+      {cropModalOpen && (
+        <div className="cropper-overlay">
+          <div className="cropper-modal">
+            <div className="cropper-header">
+              <h4>Crop Profile Photo</h4>
+              <button type="button" className="btn-close" onClick={() => setCropModalOpen(false)}>×</button>
+            </div>
+            <div className="cropper-body">
+              <div
+                className="crop-viewport-wrapper"
+                onMouseDown={handleDragStart}
+                onMouseMove={handleDragMove}
+                onMouseUp={handleDragEnd}
+                onMouseLeave={handleDragEnd}
+                onTouchStart={handleDragStart}
+                onTouchMove={handleDragMove}
+                onTouchEnd={handleDragEnd}
+              >
+                <img
+                  id="cropper-source-img"
+                  src={rawImageSrc}
+                  alt="Source to Crop"
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    top: "50%",
+                    width: `${imgSize.w}px`,
+                    height: `${imgSize.h}px`,
+                    transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                    transformOrigin: "center center",
+                    maxWidth: "none",
+                    maxHeight: "none",
+                    userSelect: "none",
+                    pointerEvents: "none"
+                  }}
+                />
+                <div className="crop-mask"></div>
+              </div>
+
+              <div className="cropper-controls">
+                <div className="zoom-control">
+                  <span className="zoom-label">Zoom</span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="4"
+                    step="0.05"
+                    value={zoom}
+                    onChange={(e) => setZoom(parseFloat(e.target.value))}
+                    className="zoom-slider"
+                  />
+                  <span className="zoom-value">{Math.round(zoom * 100)}%</span>
+                </div>
+                <p className="cropper-instructions">Drag image to position. Use slider to zoom.</p>
+              </div>
+            </div>
+            <div className="cropper-footer">
+              <button type="button" className="btn-cancel" onClick={() => setCropModalOpen(false)}>Cancel</button>
+              <button type="button" className="btn-apply" onClick={applyCrop}>Crop & Apply</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
