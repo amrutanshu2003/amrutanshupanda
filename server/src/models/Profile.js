@@ -25,6 +25,7 @@ const ProfileSchema = new mongoose.Schema(
     email: { type: String, required: true },
     about: { type: String, required: true },
     profile_image_data: { type: String, default: "" },
+    profile_image_public_id: { type: String, default: "" },
     stats: { type: [StatSchema], default: [] },
     skills: { type: [String], default: [] },
     projects: { type: [ProjectSchema], default: [] }
