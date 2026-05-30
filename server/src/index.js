@@ -393,12 +393,12 @@ app.post("/api/contact", async (req, res) => {
                     <tr>
                       <td style="padding: 0 12px;">
                         <a href="https://github.com/amrutanshu2003" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://img.icons8.com/ios-filled/100/0f172a/github.png" width="36" height="36" style="width: 36px; height: 36px; display: block; border: 0;" alt="GitHub" />
+                          <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="36" height="36" style="width: 36px; height: 36px; display: block; border: 0;" alt="GitHub" />
                         </a>
                       </td>
                       <td style="padding: 0 12px;">
                         <a href="https://www.linkedin.com/in/amrutanshu-panda-" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://img.icons8.com/ios-filled/100/0274b3/linkedin.png" width="36" height="36" style="width: 36px; height: 36px; display: block; border: 0;" alt="LinkedIn" />
+                          <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="36" height="36" style="width: 36px; height: 36px; display: block; border: 0;" alt="LinkedIn" />
                         </a>
                       </td>
                     </tr>
