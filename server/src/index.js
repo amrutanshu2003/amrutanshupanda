@@ -18,8 +18,12 @@ cloudinary.config({
 
 const app = express();
 
-// Transporter setup for email notifications
-const createTransporter = () => {
+// Transporter setup for email notifications with connection pooling
+let cachedTransporter = null;
+
+const getTransporter = () => {
+  if (cachedTransporter) return cachedTransporter;
+
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
@@ -28,10 +32,28 @@ const createTransporter = () => {
     return null;
   }
 
-  return nodemailer.createTransport({
-    service: "gmail",
+  cachedTransporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    rateDelta: 1000,
+    rateLimit: 5,
     auth: { user, pass }
   });
+
+  // Verify the connection configuration on creation
+  cachedTransporter.verify((error) => {
+    if (error) {
+      console.error("❌ SMTP Transporter warm pooling verification failed:", error.message);
+    } else {
+      console.log("🚀 SMTP Connection Pool is warm and ready to dispatch emails instantly!");
+    }
+  });
+
+  return cachedTransporter;
 };
 
 const PORT = Number(process.env.PORT || 5000);
@@ -157,7 +179,7 @@ app.post("/api/contact", async (req, res) => {
     }
 
     // 3. Send email notification asynchronously via Nodemailer (if configured)
-    const transporter = createTransporter();
+    const transporter = getTransporter();
     if (transporter) {
       const attachments = [];
       let profilePicHtml = "";
