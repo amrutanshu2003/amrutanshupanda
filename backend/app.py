@@ -3,14 +3,14 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from bson import ObjectId
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from datetime import datetime, timezone
 import os
 import base64
 import smtplib
 from email.message import EmailMessage
 
-load_dotenv()
+load_dotenv(find_dotenv())
 
 app = Flask(__name__)
 
