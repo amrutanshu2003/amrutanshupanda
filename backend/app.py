@@ -7,6 +7,9 @@ from dotenv import load_dotenv, find_dotenv
 from datetime import datetime, timezone
 import os
 import base64
+import json
+from urllib import request as urllib_request
+from urllib.error import HTTPError
 
 load_dotenv(find_dotenv())
 
@@ -21,6 +24,9 @@ COLLECTION_NAME = os.getenv("MONGO_COLLECTION", "profiles")
 MESSAGE_COLLECTION_NAME = os.getenv("MONGO_MESSAGE_COLLECTION", "messages")
 PORT = int(os.getenv("PORT", "10000"))
 MAX_IMAGE_SIZE = 3 * 1024 * 1024
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+MAIL_FROM = os.getenv("MAIL_FROM", "onboarding@resend.dev").strip()
+CONTACT_TO = os.getenv("CONTACT_TO", "amrutanshu20003@gmail.com").strip()
 
 DEFAULT_PROFILE = {
     "slug": "amrutanshu-panda",
@@ -156,6 +162,41 @@ def save_contact_message(name, email, subject, message):
     get_messages_collection().insert_one(payload)
 
 
+def send_contact_email(name, email, subject, message):
+    if not RESEND_API_KEY:
+        raise ValueError("RESEND_API_KEY missing")
+
+    payload = {
+        "from": MAIL_FROM,
+        "to": [CONTACT_TO],
+        "subject": f"[Portfolio] {subject}",
+        "text": (
+            "New message from portfolio\n\n"
+            f"Name: {name}\n"
+            f"Email: {email}\n"
+            f"Subject: {subject}\n\n"
+            f"Message:\n{message}\n"
+        ),
+        "reply_to": email,
+    }
+    req = urllib_request.Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode("utf-8"),
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json",
+        },
+    )
+    try:
+        with urllib_request.urlopen(req, timeout=8) as resp:
+            if resp.status < 200 or resp.status >= 300:
+                raise ValueError(f"Email API failed with status {resp.status}")
+    except HTTPError as e:
+        detail = e.read().decode("utf-8", errors="ignore")
+        raise ValueError(f"Email API HTTP {e.code}: {detail}") from e
+
+
 def list_recent_messages(limit=20):
     docs = list(get_messages_collection().find().sort("created_at", -1).limit(limit))
     for item in docs:
@@ -197,7 +238,11 @@ def api_contact():
     except Exception:
         return jsonify({"ok": False, "error": "Message could not be saved to database"}), 500
 
-    return jsonify({"ok": True})
+    try:
+        send_contact_email(name, email, subject, message)
+        return jsonify({"ok": True})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
 
 
 @app.route("/admin", methods=["GET", "POST"])
