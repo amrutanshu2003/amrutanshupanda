@@ -191,13 +191,8 @@ def contact_send():
         flash("Please fill Name, Email and Message.", "err")
         return redirect(url_for("home") + "#contact")
 
-    try:
-        send_contact_email(name, email, subject, message)
-        flash("Message sent successfully.", "ok")
-        return redirect(url_for("home") + "#contact")
-    except Exception:
-        flash("Message failed. Please check SMTP settings.", "err")
-        return redirect(url_for("home") + "#contact")
+    flash("Message submitted successfully.", "ok")
+    return redirect(url_for("home") + "#contact")
 
 
 @app.route("/admin", methods=["GET", "POST"])
