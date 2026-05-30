@@ -388,17 +388,37 @@ app.post("/api/contact", async (req, res) => {
 
                 <!-- Social Engagement CTA Icons Only -->
                 <div style="text-align: center; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 25px;">
-                  <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 16px;">Connect with Me</span>
+                  <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 18px;">Connect with Me</span>
                   <table style="margin: 0 auto; border-collapse: collapse;">
                     <tr>
-                      <td style="padding: 0 12px;">
+                      <td style="padding: 0 8px;">
                         <a href="https://github.com/amrutanshu2003" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="36" height="36" style="width: 36px; height: 36px; display: block; border: 0;" alt="GitHub" />
+                          <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="GitHub" />
                         </a>
                       </td>
-                      <td style="padding: 0 12px;">
+                      <td style="padding: 0 8px;">
                         <a href="https://www.linkedin.com/in/amrutanshu-panda-" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="36" height="36" style="width: 36px; height: 36px; display: block; border: 0;" alt="LinkedIn" />
+                          <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="LinkedIn" />
+                        </a>
+                      </td>
+                      <td style="padding: 0 8px;">
+                        <a href="https://hashnode.com/@AmrutanshuPanda" target="_blank" style="display: block; text-decoration: none;">
+                          <img src="https://img.icons8.com/color/120/hashnode.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="Hashnode" />
+                        </a>
+                      </td>
+                      <td style="padding: 0 8px;">
+                        <a href="https://www.youtube.com/@amrutanshupandadeveloper" target="_blank" style="display: block; text-decoration: none;">
+                          <img src="https://img.icons8.com/color/120/youtube-play.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="YouTube" />
+                        </a>
+                      </td>
+                      <td style="padding: 0 8px;">
+                        <a href="https://wa.me/919337606293" target="_blank" style="display: block; text-decoration: none;">
+                          <img src="https://img.icons8.com/color/120/whatsapp.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="WhatsApp" />
+                        </a>
+                      </td>
+                      <td style="padding: 0 8px;">
+                        <a href="https://t.me/amrutanshupandadeveloper" target="_blank" style="display: block; text-decoration: none;">
+                          <img src="https://img.icons8.com/color/120/telegram-app.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="Telegram" />
                         </a>
                       </td>
                     </tr>

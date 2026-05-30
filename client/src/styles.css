@@ -1509,17 +1509,22 @@ textarea:focus {
 
 /* Perfect circular arc contour mapping for satellite icons */
 .orbit-item.social-mail {
-  margin-bottom: 7px;
+  margin-bottom: 9px;
   /* Curved up left side */
 }
 
 .orbit-item.social-github {
-  margin-bottom: 0px;
-  /* Center point lowest */
+  margin-bottom: 2px;
+  /* Left center point */
 }
 
 .orbit-item.social-linkedin {
-  margin-bottom: 7px;
+  margin-bottom: 2px;
+  /* Right center point */
+}
+
+.orbit-item.social-youtube {
+  margin-bottom: 9px;
   /* Curved up right side */
 }
 
@@ -1592,11 +1597,30 @@ textarea:focus {
   transform: translateY(-4px) scale(1.1);
 }
 
+.orbit-item.social-youtube {
+  color: #ff0000;
+}
+
+.orbit-item.social-youtube svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.orbit-item.social-youtube:hover {
+  background: rgba(255, 0, 0, 0.12);
+  border-color: rgba(255, 0, 0, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(255, 0, 0, 0.35);
+  transform: translateY(-4px) scale(1.1);
+}
+
 /* Make sure profile-social-orbit has full responsive compatibility */
 @media (max-width: 520px) {
   .profile-social-orbit {
     bottom: 6px;
-    gap: 10px;
+    gap: 8px;
+    /* tighter gap for 4 items on mobile */
     height: 38px;
   }
 
@@ -1611,15 +1635,19 @@ textarea:focus {
   }
 
   .orbit-item.social-mail {
-    margin-bottom: 5px;
+    margin-bottom: 6px;
   }
 
   .orbit-item.social-github {
-    margin-bottom: 0px;
+    margin-bottom: 1px;
   }
 
   .orbit-item.social-linkedin {
-    margin-bottom: 5px;
+    margin-bottom: 1px;
+  }
+
+  .orbit-item.social-youtube {
+    margin-bottom: 6px;
   }
 }
 
