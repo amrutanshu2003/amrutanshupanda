@@ -1,34 +1,52 @@
-﻿# Portfolio (Python + MongoDB)
+# MERN Portfolio
 
-This is a modern portfolio website built with Flask and MongoDB.
+## 1) Backend setup
 
-## Your details already added
-- Name: Amrutanshu Panda
-- Email: amrutanshu20003@gmail.com
-- Phone: 9337606293
+```powershell
+cd mern\server
+npm install
+copy .env.example .env
+```
 
-## Setup
-1. Install dependencies:
-   pip install -r requirements.txt
-2. Start MongoDB locally (default URI used: mongodb://127.0.0.1:27017)
-3. Run app:
-   python app.py
-4. Open in browser:
-   http://127.0.0.1:5000
+Edit `.env`:
 
-## Edit and save everything in DB
-- Open admin panel:
-  http://127.0.0.1:5000/admin
-- Update fields and click `Save To MongoDB`
-- Home page automatically shows saved MongoDB data
+```env
+PORT=5000
+MONGO_URI=your_mongodb_atlas_uri
+FRONTEND_ORIGIN=http://localhost:5173
+```
 
-## Photo
-- Put your image at:
-  static/images/profile.jpg
+Run backend:
 
-## Optional environment variables
-- MONGO_URI
-- MONGO_DB
-- MONGO_COLLECTION
+```powershell
+npm run dev
+```
 
-If MongoDB is not available, app still runs with fallback profile data.
+## 2) Frontend setup
+
+```powershell
+cd ..\client
+npm install
+```
+
+Create `.env` in `mern/client`:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+Run frontend:
+
+```powershell
+npm run dev
+```
+
+Open:
+- http://localhost:5173
+- http://localhost:5173/admin
+
+## Features included
+- Portfolio data from MongoDB
+- Contact form saves to MongoDB
+- Admin edits profile
+- Admin sees and deletes messages

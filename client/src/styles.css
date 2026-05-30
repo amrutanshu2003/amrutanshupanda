@@ -1,0 +1,114 @@
+:root {
+  font-family: Outfit, sans-serif;
+  color: #f4f5fa;
+  background: #0f1220;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at 10% 10%, #2f385f 0, transparent 35%), #0f1220;
+}
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topbar a {
+  color: #ff8c5a;
+  text-decoration: none;
+}
+
+.card {
+  background: rgba(28, 32, 49, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chips span {
+  background: #242b43;
+  border: 1px solid #3f4b75;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.projects,
+.messages {
+  display: grid;
+  gap: 10px;
+}
+
+.projects article,
+.messages article {
+  background: #1e2337;
+  border: 1px solid #363f61;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.form {
+  display: grid;
+  gap: 8px;
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+textarea {
+  background: #14192b;
+  color: #f3f4f9;
+  border: 1px solid #3a466c;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+button {
+  background: #ff7b48;
+  color: white;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.icon-btn {
+  float: right;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  padding: 0;
+  background: #2f1e26;
+}
+
+.status {
+  color: #ffd38f;
+}
+
+.loading {
+  padding: 40px;
+  text-align: center;
+}
