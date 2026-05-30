@@ -431,6 +431,8 @@ button {
   aspect-ratio: 1;
   display: grid;
   place-items: center;
+  /* overflow must stay visible so arc icons can peek outside the ring */
+  overflow: visible;
 }
 
 .profile-image-glow {
@@ -578,33 +580,333 @@ button {
   line-height: 1.1;
 }
 
+/* ---- Modern Toolkit Section ---- */
+.skills-panel {
+  position: relative;
+  overflow: visible; /* Allow glowing shadows and tooltips to render properly */
+  border-radius: 18px !important; /* Perfect visual harmony with modern project cards */
+  background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%) !important;
+  border: 1px solid rgba(246, 241, 232, 0.08) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 20px 45px rgba(0,0,0,0.25) !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.skills-panel:hover {
+  border-color: rgba(89, 214, 180, 0.25) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 28px 55px rgba(0,0,0,0.3),
+    0 0 0 1px rgba(89, 214, 180, 0.05) !important;
+}
+
+/* Premium Badge for Toolkit label */
+.skills-panel .section-heading span {
+  align-self: start;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  background: rgba(89, 214, 180, 0.08);
+  border: 1px solid rgba(89, 214, 180, 0.22);
+  padding: 4px 10px;
+  border-radius: 99px;
+  width: fit-content;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 24px;
 }
 
 .chips span {
-  padding: 10px 13px;
-  border: 1px solid rgba(89, 214, 180, 0.28);
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
   color: var(--heading);
-  font-weight: 800;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  position: relative;
+  transition: 
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s ease;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+  user-select: none;
+}
+
+/* Pulsating micro-dot representing active proficiency */
+.chips span::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(89, 214, 180, 0.45);
+  margin-right: 10px;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Hover effects */
+.chips span:hover {
   background: rgba(89, 214, 180, 0.09);
+  border-color: rgba(89, 214, 180, 0.45);
+  color: var(--accent);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 22px rgba(89, 214, 180, 0.25),
+    0 0 0 1px rgba(89, 214, 180, 0.08);
+}
+
+.chips span:hover::before {
+  background: var(--accent);
+  transform: scale(1.3);
+  box-shadow: 0 0 8px var(--accent);
 }
 
 .projects {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 36px 20px;
+  margin-top: 48px;
 }
 
-.projects article,
+/* ---- Modern Project Card ---- */
+.project-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 240px;
+  padding: 22px;
+  overflow: visible;
+  border: 1px solid rgba(246, 241, 232, 0.1);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.07),
+    0 16px 40px rgba(0,0,0,0.22);
+  transition:
+    transform 280ms cubic-bezier(0.34,1.56,0.64,1),
+    border-color 280ms ease,
+    box-shadow 280ms ease;
+}
+
+/* Glowing blob — hidden by default */
+.project-card-glow {
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle at 30% 70%, rgba(89,214,180,0.18), transparent 60%);
+  opacity: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  z-index: 0;
+}
+
+.project-card:hover {
+  transform: translateY(-8px) scale(1.015);
+  border-color: rgba(89,214,180,0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 28px 60px rgba(0,0,0,0.32),
+    0 0 0 1px rgba(89,214,180,0.12);
+}
+
+.project-card:hover .project-card-glow {
+  opacity: 1;
+}
+
+/* Card Top Row */
+.project-card-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.project-number {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(247, 200, 115, 0.75);
+  background: rgba(247,200,115,0.08);
+  border: 1px solid rgba(247,200,115,0.2);
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+/* Link icon buttons */
+.project-link-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-icon-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(8px);
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.25s ease;
+}
+
+.project-icon-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+/* Globe / Live Demo button */
+.project-icon-btn.demo-btn:hover {
+  background: rgba(89,214,180,0.12);
+  border-color: rgba(89,214,180,0.4);
+  color: var(--accent);
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 8px 20px rgba(89,214,180,0.2);
+}
+
+.project-icon-btn.demo-btn:hover svg {
+  transform: rotate(-8deg) scale(1.1);
+}
+
+/* GitHub button */
+.project-icon-btn.github-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.3);
+  color: var(--heading);
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 8px 20px rgba(255,255,255,0.1);
+}
+
+/* Tooltips */
+.proj-icon-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: var(--tooltip-bg);
+  border: 1px solid var(--border);
+  color: var(--tooltip-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  z-index: 50;
+}
+
+.proj-icon-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 6px;
+  height: 6px;
+  background: var(--tooltip-bg);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.project-icon-btn:hover .proj-icon-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Project content */
+.project-title {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 10px;
+  color: var(--heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.project-desc {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  margin: 0 0 20px;
+  color: var(--muted);
+  line-height: 1.65;
+  font-size: 0.92rem;
+}
+
+/* Footer */
+.project-card-footer {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-index-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--soft);
+  opacity: 0.6;
+}
+
+.project-index-num {
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: rgba(247,200,115,0.5);
+}
+
+/* Message articles (keep existing) */
 .messages article {
   position: relative;
   display: grid;
   align-content: start;
-  min-height: 230px;
+  min-height: 0;
   padding: 20px;
   overflow: hidden;
   border: 1px solid rgba(246, 241, 232, 0.13);
@@ -618,43 +920,35 @@ button {
     background 200ms ease;
 }
 
-.projects article:hover {
-  border-color: rgba(247, 200, 115, 0.42);
-  background:
-    linear-gradient(145deg, rgba(255, 122, 89, 0.12), transparent 46%),
-    rgba(255, 255, 255, 0.075);
-  transform: translateY(-6px) rotateX(3deg) rotateY(-3deg);
-}
-
-.project-number {
-  color: rgba(247, 200, 115, 0.86);
-  font-size: 0.84rem;
-  font-weight: 900;
-}
-
-.projects h4 {
-  margin: 26px 0 10px;
-  color: var(--heading);
-  font-size: 1.2rem;
-}
-
-.projects p,
 .messages p {
   color: var(--muted);
   line-height: 1.6;
 }
 
-.projects a {
-  align-self: end;
-  margin-top: 26px;
-  color: var(--accent);
-  font-weight: 900;
-  text-decoration: none;
+/* Light theme overrides for project cards */
+:root[data-theme="light"] .project-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+  border-color: rgba(0,0,0,0.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.8),
+    0 12px 30px rgba(0,0,0,0.07);
 }
 
-.projects a:hover {
-  color: var(--accent-2);
+:root[data-theme="light"] .project-card:hover {
+  border-color: rgba(8,127,108,0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.8),
+    0 24px 50px rgba(0,0,0,0.1);
 }
+
+:root[data-theme="light"] .project-card-footer {
+  border-top-color: rgba(0,0,0,0.06);
+}
+
+:root[data-theme="light"] .project-card-glow {
+  background: radial-gradient(circle at 30% 70%, rgba(8,127,108,0.1), transparent 60%);
+}
+
 
 .form {
   display: grid;
@@ -949,12 +1243,11 @@ textarea:focus {
 .social-icon {
   width: 17px;
   height: 17px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
+  /* Do NOT set fill or stroke here — brand SVGs use inline fills that must not be overridden */
+  fill: unset;
+  stroke: none;
 }
+
 
 .social-details {
   position: relative;
@@ -1069,8 +1362,177 @@ textarea:focus {
   border-color: rgba(0, 119, 181, 0.3);
 }
 
-.contact-social-item.social-linkedin:hover .social-details strong {
-  color: #0077b5;
+
+/* YouTube hover */
+.contact-social-item.social-youtube:hover::after {
+  background: #ff0000;
+  box-shadow: 0 0 12px #ff0000;
+}
+.contact-social-item.social-youtube::before {
+  background: radial-gradient(circle, rgba(255, 0, 0, 0.15), transparent 70%);
+}
+.contact-social-item.social-youtube:hover::before {
+  opacity: 1;
+  transform: scale(1.2);
+}
+.contact-social-item.social-youtube:hover {
+  border-color: rgba(255, 0, 0, 0.35);
+}
+.contact-social-item.social-youtube:hover .social-icon-wrapper {
+  color: #ff0000;
+  background: rgba(255, 0, 0, 0.08);
+  border-color: rgba(255, 0, 0, 0.25);
+}
+.contact-social-item.social-youtube:hover .social-details strong {
+  color: #ff0000;
+}
+
+/* Hashnode hover */
+.contact-social-item.social-hashnode:hover::after {
+  background: #2962ff;
+  box-shadow: 0 0 12px #2962ff;
+}
+.contact-social-item.social-hashnode::before {
+  background: radial-gradient(circle, rgba(41, 98, 255, 0.15), transparent 70%);
+}
+.contact-social-item.social-hashnode:hover::before {
+  opacity: 1;
+  transform: scale(1.2);
+}
+.contact-social-item.social-hashnode:hover {
+  border-color: rgba(41, 98, 255, 0.35);
+}
+.contact-social-item.social-hashnode:hover .social-icon-wrapper {
+  color: #2962ff;
+  background: rgba(41, 98, 255, 0.08);
+  border-color: rgba(41, 98, 255, 0.25);
+}
+.contact-social-item.social-hashnode:hover .social-details strong {
+  color: #2962ff;
+}
+
+/* X hover */
+.contact-social-item.social-x:hover::after {
+  background: var(--heading);
+  box-shadow: 0 0 12px var(--heading);
+}
+.contact-social-item.social-x::before {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent 70%);
+}
+.contact-social-item.social-x:hover::before {
+  opacity: 1;
+  transform: scale(1.2);
+}
+.contact-social-item.social-x:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.contact-social-item.social-x:hover .social-icon-wrapper {
+  color: var(--heading);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.contact-social-item.social-x:hover .social-details strong {
+  color: var(--heading);
+}
+
+/* WhatsApp hover */
+.contact-social-item.social-whatsapp:hover::after {
+  background: #25D366;
+  box-shadow: 0 0 12px #25D366;
+}
+.contact-social-item.social-whatsapp::before {
+  background: radial-gradient(circle, rgba(37, 211, 102, 0.15), transparent 70%);
+}
+.contact-social-item.social-whatsapp:hover::before {
+  opacity: 1;
+  transform: scale(1.2);
+}
+.contact-social-item.social-whatsapp:hover {
+  border-color: rgba(37, 211, 102, 0.35);
+}
+.contact-social-item.social-whatsapp:hover .social-icon-wrapper {
+  color: #25D366;
+  background: rgba(37, 211, 102, 0.08);
+  border-color: rgba(37, 211, 102, 0.25);
+}
+.contact-social-item.social-whatsapp:hover .social-details strong {
+  color: #25D366;
+}
+
+/* Telegram hover */
+.contact-social-item.social-telegram:hover::after {
+  background: #0088cc;
+  box-shadow: 0 0 12px #0088cc;
+}
+.contact-social-item.social-telegram::before {
+  background: radial-gradient(circle, rgba(0, 136, 204, 0.15), transparent 70%);
+}
+.contact-social-item.social-telegram:hover::before {
+  opacity: 1;
+  transform: scale(1.2);
+}
+.contact-social-item.social-telegram:hover {
+  border-color: rgba(0, 136, 204, 0.35);
+}
+.contact-social-item.social-telegram:hover .social-icon-wrapper {
+  color: #0088cc;
+  background: rgba(0, 136, 204, 0.08);
+  border-color: rgba(0, 136, 204, 0.25);
+}
+.contact-social-item.social-telegram:hover .social-details strong {
+  color: #0088cc;
+}
+
+/* Instagram hover */
+.contact-social-item.social-instagram:hover::after {
+  background: linear-gradient(135deg, #fdf497, #fd5949, #d6249f, #285AEB);
+  box-shadow: 0 0 12px rgba(214, 36, 159, 0.5);
+}
+.contact-social-item.social-instagram::before {
+  background: radial-gradient(circle, rgba(214, 36, 159, 0.15), rgba(253, 89, 73, 0.1), transparent 70%);
+}
+.contact-social-item.social-instagram:hover::before {
+  opacity: 1;
+  transform: scale(1.2);
+}
+.contact-social-item.social-instagram:hover {
+  border-color: rgba(214, 36, 159, 0.35);
+}
+.contact-social-item.social-instagram:hover .social-icon-wrapper {
+  color: #d6249f;
+  background: rgba(214, 36, 159, 0.08);
+  border-color: rgba(214, 36, 159, 0.25);
+}
+.contact-social-item.social-instagram:hover .social-details strong {
+  background: linear-gradient(90deg, #fdf497 0%, #fd5949 33%, #d6249f 66%, #285AEB 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Facebook hover */
+.contact-social-item.social-facebook:hover::after {
+  background: #1877F2;
+  box-shadow: 0 0 12px #1877F2;
+}
+.contact-social-item.social-facebook::before {
+  background: radial-gradient(circle, rgba(24, 119, 242, 0.15), transparent 70%);
+}
+.contact-social-item.social-facebook:hover::before {
+  opacity: 1;
+  transform: scale(1.2);
+}
+.contact-social-item.social-facebook:hover {
+  border-color: rgba(24, 119, 242, 0.35);
+}
+.contact-social-item.social-facebook:hover .social-icon-wrapper {
+  color: #1877F2;
+  background: rgba(24, 119, 242, 0.08);
+  border-color: rgba(24, 119, 242, 0.25);
+}
+.contact-social-item.social-facebook:hover .social-details strong {
+  color: #1877F2;
 }
 
 /* Contact responsive breakpoints */
@@ -1473,24 +1935,31 @@ textarea:focus {
   -webkit-text-fill-color: transparent;
 }
 
-/* Futuristic Profile Social Orbit Icons styled in a beautiful round/curved structure! */
+/* ============================================================
+   Profile Social Orbit — True U-shape arc along circle edge
+   Circle radius ≈ 140px (wrapper is 280px wide)
+   5 icons placed at angles: 210°, 240°, 270°, 300°, 330°
+   cos(θ)·r  → horizontal offset from centre
+   sin(θ)·r  → vertical offset from centre
+   Origin anchor: centre of the wrapper (left:50%, top:50%)
+   We then shift each icon -16px (half icon size) so it's centred
+   ============================================================ */
+
 .profile-social-orbit {
   position: absolute;
-  bottom: 8px;
-  /* Floating directly inside/overlapping the bottom of your circular profile centerpiece! */
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: flex-end;
-  /* Align to bottom to allow vertical offset curves */
-  justify-content: center;
-  gap: 14px;
+  /* Place the orbit layer exactly over the wrapper centre */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 10;
-  height: 48px;
+  pointer-events: none;   /* orbit container itself is non-interactive */
 }
 
 .orbit-item {
-  position: relative;
+  /* Each icon is absolutely positioned relative to orbit container */
+  position: absolute;
+  pointer-events: all;
   display: grid;
   place-items: center;
   width: 32px;
@@ -1504,28 +1973,100 @@ textarea:focus {
   backdrop-filter: blur(12px);
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* half width/height offset so icon centres on the arc point */
+  margin-left: -16px;
+  margin-top: -16px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Perfect circular arc contour mapping for satellite icons */
+/*
+  Arc maths (wrapper = 280px → radius = 140px)
+  Angles in degrees, origin at circle centre (left:50%, top:50%)
+
+  icon 1 (mail)     → 210°  cos=-0.866  sin=-0.5    → left=50%+(-0.866*49%)  top=50%+(0.5*49%)
+  Actually we use a slightly smaller radius (≈49% of wrapper = ~137px)
+  to keep icons just inside/on the border ring.
+
+  Formula:
+    left = 50% + cos(θ_rad) * R%
+    top  = 50% + sin(θ_rad) * R%
+
+  where R% = 49  (just touching inside the ring)
+  θ measured clockwise from right (standard CSS coords: y increases downward)
+
+  210° (measuring from right, clockwise) in standard math coords:
+    In CSS coords (y-down), angle from POSITIVE-X axis:
+    We want icons along the BOTTOM half, spread from bottom-left to bottom-right.
+    Bottom-left = 210° (standard), bottom = 270°, bottom-right = 330°
+
+  cos(210°) = -√3/2 ≈ -0.866   sin(210°) =  -0.5   → left: 50-42.3% = 7.7%,  top: 50-24.5% = 25.5%   ← WRONG, this would be top-left
+
+  Standard math: angle 0° = right, 90° = up (y-up coords)
+  CSS: y grows downward, so sin flips sign.
+
+  In CSS terms (0° = right, 90° = DOWN):
+    left = 50% + cos(θ) * R%   (cos unchanged)
+    top  = 50% + sin(θ) * R%   (sin is now +ve downward)
+
+  Bottom of circle = 90° (CSS)
+  Spread 5 icons: 210°, 240°, 270°, 300°, 330° in STANDARD math
+  = In CSS coords: 150°, 120°, 90°, 60°, 30°   (reflect over x-axis)
+
+  Let us just compute directly:
+  We want icons below the horizontal midpoint.
+  Positions (CSS coords, 90° = bottom):
+    pos1 (mail)     = 210° CSS → cos(210°)=-0.866, sin(210°)=-0.5  → top goes UP — not what we want
+
+  SIMPLEST approach: Use 5 evenly-spread angles that hug the BOTTOM arc:
+  Let α = angle from positive-x axis (CSS convention, y-down)
+  For bottom semi-circle: α ∈ [30°, 150°] maps to lower half
+    α=30°  → right-ish bottom
+    α=90°  → straight bottom
+    α=150° → left-ish bottom
+
+  5 icons at: 30°, 60°, 90°, 120°, 150°
+
+  R = 49% of 280px = 137px → use 49 in %
+
+  left(α) = 50 + 49*cos(α)%
+  top(α)  = 50 + 49*sin(α)%
+
+  α=30°:  cos=0.866  sin=0.5    → left=50+42.3=92.3%, top=50+24.5=74.5%
+  α=60°:  cos=0.5    sin=0.866  → left=50+24.5=74.5%, top=50+42.4=92.4%
+  α=90°:  cos=0      sin=1      → left=50%,            top=50+49=99%   (bottom)
+  α=120°: cos=-0.5   sin=0.866  → left=50-24.5=25.5%, top=92.4%
+  α=150°: cos=-0.866 sin=0.5    → left=50-42.3=7.7%,  top=74.5%
+
+  Order left-to-right: mail(150°), github(120°), hashnode(90°), linkedin(60°), youtube(30°)
+*/
+
+/* icon positions along bottom U-arc  (R = 42% → icons slightly inside the dashed ring) */
 .orbit-item.social-mail {
-  margin-bottom: 9px;
-  /* Curved up left side */
+  left: 13.6%;
+  top: 71%;
 }
 
 .orbit-item.social-github {
-  margin-bottom: 2px;
-  /* Left center point */
+  left: 29%;
+  top: 86.4%;
+}
+
+.orbit-item.social-hashnode {
+  left: 50%;
+  top: 92%;
 }
 
 .orbit-item.social-linkedin {
-  margin-bottom: 2px;
-  /* Right center point */
+  left: 71%;
+  top: 86.4%;
 }
 
 .orbit-item.social-youtube {
-  margin-bottom: 9px;
-  /* Curved up right side */
+  left: 86.4%;
+  top: 71%;
 }
 
 .orbit-item svg {
@@ -1534,7 +2075,8 @@ textarea:focus {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Specific item hover colors, glowing mesh backings and lifts */
+/* ---- brand colours & hovers ---- */
+
 .orbit-item.social-mail {
   color: #4285f4;
 }
@@ -1553,11 +2095,11 @@ textarea:focus {
   border-color: rgba(255, 255, 255, 0.25);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    -4px -4px 15px rgba(66, 133, 244, 0.25),   /* Soft Google Blue (top-left) */
-    4px -4px 15px rgba(234, 67, 53, 0.25),     /* Soft Google Red (top-right) */
-    6px 6px 24px rgba(52, 168, 83, 0.55),      /* Bright Google Green (bottom-right) */
-    -6px 6px 24px rgba(251, 188, 4, 0.55);     /* Bright Google Yellow (bottom-left) */
-  transform: translateY(-4px) scale(1.1);
+    -4px -4px 15px rgba(66, 133, 244, 0.25),
+    4px -4px 15px rgba(234, 67, 53, 0.25),
+    6px 6px 24px rgba(52, 168, 83, 0.55),
+    -6px 6px 24px rgba(251, 188, 4, 0.55);
+  transform: scale(1.18) translateY(-3px);
 }
 
 .orbit-item.social-github {
@@ -1576,7 +2118,25 @@ textarea:focus {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 12px 30px rgba(255, 255, 255, 0.15);
-  transform: translateY(-4px) scale(1.1);
+  transform: scale(1.18) translateY(-3px);
+}
+
+.orbit-item.social-hashnode {
+  color: #2563eb;
+}
+
+.orbit-item.social-hashnode svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.orbit-item.social-hashnode:hover {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(37, 99, 235, 0.3);
+  transform: scale(1.18) translateY(-3px);
 }
 
 .orbit-item.social-linkedin {
@@ -1594,7 +2154,7 @@ textarea:focus {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 12px 30px rgba(0, 119, 181, 0.3);
-  transform: translateY(-4px) scale(1.1);
+  transform: scale(1.18) translateY(-3px);
 }
 
 .orbit-item.social-youtube {
@@ -1612,44 +2172,135 @@ textarea:focus {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 12px 30px rgba(255, 0, 0, 0.35);
-  transform: translateY(-4px) scale(1.1);
+  transform: scale(1.18) translateY(-3px);
 }
 
-/* Make sure profile-social-orbit has full responsive compatibility */
+/* Responsive — smaller icons on mobile */
 @media (max-width: 520px) {
-  .profile-social-orbit {
-    bottom: 6px;
-    gap: 8px;
-    /* tighter gap for 4 items on mobile */
-    height: 38px;
-  }
-
   .orbit-item {
     width: 26px;
     height: 26px;
+    margin-left: -13px;
+    margin-top: -13px;
   }
 
   .orbit-item svg {
     width: 11px;
     height: 11px;
   }
-
-  .orbit-item.social-mail {
-    margin-bottom: 6px;
-  }
-
-  .orbit-item.social-github {
-    margin-bottom: 1px;
-  }
-
-  .orbit-item.social-linkedin {
-    margin-bottom: 1px;
-  }
-
-  .orbit-item.social-youtube {
-    margin-bottom: 6px;
-  }
 }
+
+/* X / Twitter */
+.orbit-item.social-x,
+.orbit-item.social-twitter {
+  color: #000000;
+}
+
+.orbit-item.social-x:hover,
+.orbit-item.social-twitter:hover {
+  background: rgba(0, 0, 0, 0.18);
+  border-color: rgba(0, 0, 0, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(0, 0, 0, 0.45);
+  transform: scale(1.18) translateY(-3px);
+}
+
+:root[data-theme="light"] .orbit-item.social-x:hover,
+:root[data-theme="light"] .orbit-item.social-twitter:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+/* WhatsApp */
+.orbit-item.social-whatsapp {
+  color: #25D366;
+}
+
+.orbit-item.social-whatsapp svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.orbit-item.social-whatsapp:hover {
+  background: rgba(37, 211, 102, 0.14);
+  border-color: rgba(37, 211, 102, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(37, 211, 102, 0.38);
+  transform: scale(1.18) translateY(-3px);
+}
+
+/* Telegram */
+.orbit-item.social-telegram {
+  color: #24A1DE;
+}
+
+.orbit-item.social-telegram svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.orbit-item.social-telegram:hover {
+  background: rgba(36, 161, 222, 0.14);
+  border-color: rgba(36, 161, 222, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(36, 161, 222, 0.38);
+  transform: scale(1.18) translateY(-3px);
+}
+
+/* Instagram */
+.orbit-item.social-instagram:hover {
+  background: rgba(225, 48, 108, 0.12);
+  border-color: rgba(225, 48, 108, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 6px 18px rgba(253, 29, 29, 0.22),
+    0 12px 30px rgba(225, 48, 108, 0.32),
+    0 0 40px rgba(131, 58, 180, 0.22);
+  transform: scale(1.18) translateY(-3px);
+}
+
+/* Facebook */
+.orbit-item.social-facebook {
+  color: #1877F2;
+}
+
+.orbit-item.social-facebook svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.orbit-item.social-facebook:hover {
+  background: rgba(24, 119, 242, 0.14);
+  border-color: rgba(24, 119, 242, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(24, 119, 242, 0.38);
+  transform: scale(1.18) translateY(-3px);
+}
+
+/* Globe / default link */
+.orbit-item.social-globe {
+  color: var(--accent);
+}
+
+.orbit-item.social-globe svg {
+  fill: none;
+  stroke: currentColor;
+}
+
+.orbit-item.social-globe:hover {
+  background: rgba(89, 214, 180, 0.12);
+  border-color: rgba(89, 214, 180, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(89, 214, 180, 0.32);
+  transform: scale(1.18) translateY(-3px);
+}
+
+
 
 /* Image Uploader Styling for Admin Panel */
 .image-uploader-section {
@@ -1778,6 +2429,288 @@ textarea:focus {
 :root[data-theme="light"] .preview-placeholder {
   color: var(--accent);
 }
+
+/* ============================================================
+   Admin Projects Manager — Full CRUD Panel
+   ============================================================ */
+
+.admin-projects-panel {
+  margin-top: 18px;
+}
+
+.admin-projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-project-card {
+  border: 1px solid rgba(89, 214, 180, 0.18);
+  border-radius: 14px;
+  background: rgba(89, 214, 180, 0.03);
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.admin-project-card:hover {
+  border-color: rgba(89, 214, 180, 0.35);
+  box-shadow: 0 8px 28px rgba(89, 214, 180, 0.08);
+}
+
+.admin-project-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(89, 214, 180, 0.05);
+  border-bottom: 1px solid rgba(89, 214, 180, 0.1);
+}
+
+.admin-project-number {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.admin-project-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Compact Social Icons Sizing Fix */
+.nav-item svg,
+.nav-item .nav-icon {
+  width: 15px !important;
+  height: 15px !important;
+  max-width: 15px !important;
+  max-height: 15px !important;
+}
+
+.orbit-item svg {
+  width: 18px !important;
+  height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
+}
+
+.social-icon-wrapper svg {
+  width: 24px !important;
+  height: 24px !important;
+  max-width: 24px !important;
+  max-height: 24px !important;
+}
+
+.admin-social-preview-icon {
+  width: 14px !important;
+  height: 14px !important;
+  display: block;
+}
+
+.admin-social-select-preview {
+  width: 18px !important;
+  height: 18px !important;
+  display: block;
+}
+
+.admin-proj-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+
+.admin-proj-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.admin-proj-btn.move-btn:hover:not(:disabled) {
+  background: rgba(89, 214, 180, 0.1);
+  border-color: rgba(89, 214, 180, 0.3);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.admin-proj-btn.move-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.admin-proj-btn.delete-btn:hover {
+  background: rgba(234, 67, 53, 0.12);
+  border-color: rgba(234, 67, 53, 0.35);
+  color: #ea4335;
+  transform: translateY(-1px);
+}
+
+.admin-project-fields {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.admin-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-field-group label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+
+.admin-field-group input,
+.admin-field-group textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--heading);
+  font: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-field-group textarea {
+  min-height: 64px;
+  resize: vertical;
+}
+
+.admin-field-group input:focus,
+.admin-field-group textarea:focus {
+  border-color: rgba(89, 214, 180, 0.5);
+  background: rgba(89, 214, 180, 0.04);
+  box-shadow: 0 0 0 3px rgba(89, 214, 180, 0.08);
+  outline: none;
+}
+
+.admin-no-projects {
+  text-align: center;
+  padding: 32px;
+  color: var(--soft);
+  font-size: 0.9rem;
+  border: 1px dashed rgba(89, 214, 180, 0.2);
+  border-radius: 12px;
+  margin: 0;
+}
+
+.admin-projects-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-add-project {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  min-height: 42px;
+  border-radius: 10px;
+  background: rgba(89, 214, 180, 0.08);
+  border: 1px solid rgba(89, 214, 180, 0.3);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: none;
+}
+
+.btn-add-project svg {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-add-project:hover {
+  background: rgba(89, 214, 180, 0.16);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(89, 214, 180, 0.15);
+}
+
+.btn-save-projects {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  min-height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #59d6b4, #f7c873);
+  border: none;
+  color: #10120f;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 20px rgba(89, 214, 180, 0.2);
+}
+
+.btn-save-projects svg {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-save-projects:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(89, 214, 180, 0.3);
+  background: linear-gradient(135deg, #6bf0cc, #ffd78c);
+}
+
+/* Light theme overrides for projects panel */
+:root[data-theme="light"] .admin-project-card {
+  border-color: rgba(8, 127, 108, 0.2);
+  background: rgba(8, 127, 108, 0.02);
+}
+
+:root[data-theme="light"] .admin-project-card:hover {
+  border-color: rgba(8, 127, 108, 0.4);
+}
+
+:root[data-theme="light"] .admin-project-card-header {
+  background: rgba(8, 127, 108, 0.04);
+  border-bottom-color: rgba(8, 127, 108, 0.12);
+}
+
+:root[data-theme="light"] .admin-field-group input,
+:root[data-theme="light"] .admin-field-group textarea {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--text);
+}
+
+:root[data-theme="light"] .admin-field-group input:focus,
+:root[data-theme="light"] .admin-field-group textarea:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 0 3px rgba(8, 127, 108, 0.1);
+}
+
+:root[data-theme="light"] .admin-no-projects {
+  border-color: rgba(8, 127, 108, 0.25);
+}
+
 
 /* Premium Image Cropper Modal styling */
 .cropper-overlay {

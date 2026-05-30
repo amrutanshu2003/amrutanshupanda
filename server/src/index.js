@@ -56,6 +56,36 @@ const getTransporter = () => {
   return cachedTransporter;
 };
 
+const getEmailSocialIconUrl = (iconName) => {
+  const icon = String(iconName || "").toLowerCase();
+  switch (icon) {
+    case "mail":
+    case "email":
+      return "https://img.icons8.com/color/48/gmail-new.png";
+    case "github":
+      return "https://img.icons8.com/material-sharp/48/181717/github.png";
+    case "linkedin":
+      return "https://img.icons8.com/color/48/linkedin.png";
+    case "hashnode":
+      return "https://img.icons8.com/color/48/hashnode.png";
+    case "youtube":
+      return "https://img.icons8.com/color/48/youtube-play.png";
+    case "x":
+    case "twitter":
+      return "https://img.icons8.com/ios-filled/48/181717/x-logo.png";
+    case "whatsapp":
+      return "https://img.icons8.com/color/48/whatsapp.png";
+    case "telegram":
+      return "https://img.icons8.com/color/48/telegram-app.png";
+    case "instagram":
+      return "https://img.icons8.com/color/48/instagram-new.png";
+    case "facebook":
+      return "https://img.icons8.com/color/48/facebook-new.png";
+    default:
+      return "https://img.icons8.com/color/48/globe--v1.png";
+  }
+};
+
 const PORT = Number(process.env.PORT || 5000);
 const MONGO_URI = process.env.MONGO_URI || "";
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
@@ -65,8 +95,29 @@ app.use(express.json({ limit: "4mb" }));
 app.use(morgan("dev"));
 
 const ensureProfile = async () => {
-  const existing = await Profile.findOne({ slug: defaultProfile.slug }).lean();
-  if (!existing) await Profile.create(defaultProfile);
+  const existing = await Profile.findOne({ slug: defaultProfile.slug });
+  if (!existing) {
+    await Profile.create(defaultProfile);
+  } else {
+    let hasChanges = false;
+    if (!existing.socials || existing.socials.length === 0) {
+      existing.socials = defaultProfile.socials;
+      hasChanges = true;
+    }
+    // Clean up any projects with missing descriptions to prevent Mongoose validation crashes
+    if (existing.projects && existing.projects.length > 0) {
+      existing.projects.forEach((proj) => {
+        if (!proj.description) {
+          proj.description = "No description provided.";
+          hasChanges = true;
+        }
+      });
+    }
+    if (hasChanges) {
+      await existing.save();
+      console.log("⚡ Upgraded MongoDB Profile document: populated missing fields!");
+    }
+  }
 };
 
 app.get("/api/health", (_req, res) => {
@@ -154,6 +205,9 @@ app.post("/api/contact", async (req, res) => {
     return res.status(400).json({ ok: false, error: "Please fill name, email and message" });
   }
 
+  // Generate a unique 6-character reference ID to bypass Gmail's duplicate email collapsing
+  const refId = Math.random().toString(36).substring(2, 8).toUpperCase();
+
   try {
     // 1. Save message to MongoDB Atlas database
     await Message.create({
@@ -167,15 +221,24 @@ app.post("/api/contact", async (req, res) => {
     let receiverEmail = "amrutanshu20003@gmail.com";
     let receiverName = "Amrutanshu Panda";
     let receiverImage = "";
+    let emailSocials = [];
     try {
       const profile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
       if (profile) {
         if (profile.email) receiverEmail = profile.email;
         if (profile.name) receiverName = profile.name;
         if (profile.profile_image_data) receiverImage = profile.profile_image_data;
+        if (profile.socials && profile.socials.length > 0) {
+          emailSocials = profile.socials.filter((s) => s.showInEmail !== false && s.url && s.platform);
+        } else {
+          emailSocials = defaultProfile.socials.filter((s) => s.showInEmail !== false && s.url && s.platform);
+        }
+      } else {
+        emailSocials = defaultProfile.socials.filter((s) => s.showInEmail !== false && s.url && s.platform);
       }
     } catch (dbErr) {
       console.error("Error loading profile email for receiver:", dbErr.message);
+      emailSocials = defaultProfile.socials.filter((s) => s.showInEmail !== false && s.url && s.platform);
     }
 
     // 3. Send email notification asynchronously via Nodemailer (if configured)
@@ -183,6 +246,13 @@ app.post("/api/contact", async (req, res) => {
     if (transporter) {
       const attachments = [];
       let profilePicHtml = "";
+      const emailSocialsHtml = emailSocials.map((s) => `
+        <td style="padding: 0 8px;">
+          <a href="${s.url}" target="_blank" style="display: block; text-decoration: none;">
+            <img src="${getEmailSocialIconUrl(s.icon)}" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="${s.platform}" />
+          </a>
+        </td>
+      `).join("");
 
       if (receiverImage && receiverImage.startsWith("http")) {
         profilePicHtml = `<img src="${receiverImage}" width="50" height="50" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #087f6c; display: block;" alt="${receiverName}" />`;
@@ -217,6 +287,9 @@ app.post("/api/contact", async (req, res) => {
         replyTo: String(email).trim(),
         subject: `📩 New Message from ${name}: ${String(subject || "Project inquiry").trim()}`,
         html: `
+          <!-- Unique email identifier to prevent Gmail threading collapse -->
+          <span style="display:none !important; font-size:0px; color:transparent; line-height:0; opacity:0; height:0; width:0; mso-hide:all; overflow:hidden; visibility:hidden;">Ref: ${refId}</span>
+
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 50px 20px; color: #0f172a; margin: 0;">
             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); border: 1px solid #e2e8f0;">
               
@@ -331,6 +404,9 @@ app.post("/api/contact", async (req, res) => {
         to: String(email).trim(),
         subject: `📩 Thanks for reaching out, ${name.split(" ")[0]}!`,
         html: `
+          <!-- Unique email identifier to prevent Gmail threading collapse -->
+          <span style="display:none !important; font-size:0px; color:transparent; line-height:0; opacity:0; height:0; width:0; mso-hide:all; overflow:hidden; visibility:hidden;">Ref: ${refId}</span>
+
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 50px 20px; color: #0f172a; margin: 0;">
             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); border: 1px solid #e2e8f0;">
               
@@ -386,44 +462,17 @@ app.post("/api/contact", async (req, res) => {
                   </table>
                 </div>
 
+                ${emailSocialsHtml ? `
                 <!-- Social Engagement CTA Icons Only -->
                 <div style="text-align: center; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 25px;">
                   <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 18px;">Connect with Me</span>
                   <table style="margin: 0 auto; border-collapse: collapse;">
                     <tr>
-                      <td style="padding: 0 8px;">
-                        <a href="https://github.com/amrutanshu2003" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="GitHub" />
-                        </a>
-                      </td>
-                      <td style="padding: 0 8px;">
-                        <a href="https://www.linkedin.com/in/amrutanshu-panda-" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="LinkedIn" />
-                        </a>
-                      </td>
-                      <td style="padding: 0 8px;">
-                        <a href="https://hashnode.com/@AmrutanshuPanda" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://img.icons8.com/color/120/hashnode.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="Hashnode" />
-                        </a>
-                      </td>
-                      <td style="padding: 0 8px;">
-                        <a href="https://www.youtube.com/@amrutanshupandadeveloper" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://img.icons8.com/color/120/youtube-play.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="YouTube" />
-                        </a>
-                      </td>
-                      <td style="padding: 0 8px;">
-                        <a href="https://wa.me/919337606293" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://img.icons8.com/color/120/whatsapp.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="WhatsApp" />
-                        </a>
-                      </td>
-                      <td style="padding: 0 8px;">
-                        <a href="https://t.me/amrutanshupandadeveloper" target="_blank" style="display: block; text-decoration: none;">
-                          <img src="https://img.icons8.com/color/120/telegram-app.png" width="32" height="32" style="width: 32px; height: 32px; display: block; border: 0;" alt="Telegram" />
-                        </a>
-                      </td>
+                      ${emailSocialsHtml}
                     </tr>
                   </table>
                 </div>
+                ` : ""}
               </div>
 
               <!-- Footer Section -->

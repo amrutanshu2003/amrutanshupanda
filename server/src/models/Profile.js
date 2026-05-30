@@ -12,7 +12,21 @@ const ProjectSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: { type: String, required: true },
-    link: { type: String, default: "#" }
+    link: { type: String, default: "#" },
+    github: { type: String, default: "" }
+  },
+  { _id: false }
+);
+
+const SocialSchema = new mongoose.Schema(
+  {
+    platform: { type: String, required: true },
+    url: { type: String, required: true },
+    icon: { type: String, required: true },
+    showInNavbar: { type: Boolean, default: true },
+    showInOrbit: { type: Boolean, default: true },
+    showInContact: { type: Boolean, default: true },
+    showInEmail: { type: Boolean, default: true }
   },
   { _id: false }
 );
@@ -28,7 +42,8 @@ const ProfileSchema = new mongoose.Schema(
     profile_image_public_id: { type: String, default: "" },
     stats: { type: [StatSchema], default: [] },
     skills: { type: [String], default: [] },
-    projects: { type: [ProjectSchema], default: [] }
+    projects: { type: [ProjectSchema], default: [] },
+    socials: { type: [SocialSchema], default: [] }
   },
   { timestamps: true }
 );

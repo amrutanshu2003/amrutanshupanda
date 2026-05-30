@@ -28,6 +28,13 @@ const defaultProfile = {
       description: "E-commerce analytics dashboard.",
       link: "#"
     }
+  ],
+  socials: [
+    { platform: "Email", icon: "mail", url: "mailto:amrutanshu20003@gmail.com", showInNavbar: true, showInOrbit: true, showInContact: true, showInEmail: true },
+    { platform: "GitHub", icon: "github", url: "https://github.com/amrutanshu2003", showInNavbar: true, showInOrbit: true, showInContact: true, showInEmail: true },
+    { platform: "LinkedIn", icon: "linkedin", url: "https://www.linkedin.com/in/amrutanshu-panda-", showInNavbar: true, showInOrbit: true, showInContact: true, showInEmail: true },
+    { platform: "Hashnode", icon: "hashnode", url: "https://hashnode.com/@AmrutanshuPanda", showInNavbar: true, showInOrbit: true, showInContact: true, showInEmail: true },
+    { platform: "YouTube", icon: "youtube", url: "https://www.youtube.com/@amrutanshupandadeveloper", showInNavbar: true, showInOrbit: true, showInContact: true, showInEmail: true }
   ]
 };
 
