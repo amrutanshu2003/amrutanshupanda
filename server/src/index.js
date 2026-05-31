@@ -27,41 +27,7 @@ cloudinary.config({
 
 const app = express();
 
-// Nodemailer with Gmail OAuth2 — uses Gmail API over HTTPS (port 443), never blocked by Render
-let cachedTransporter = null;
-
-const getTransporter = () => {
-  if (cachedTransporter) return cachedTransporter;
-
-  const user = process.env.GMAIL_USER;
-  const clientId = process.env.GMAIL_CLIENT_ID;
-  const clientSecret = process.env.GMAIL_CLIENT_SECRET;
-  const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
-
-  if (!user || !clientId || !clientSecret || !refreshToken) {
-    console.log("⚠️ Gmail OAuth2 credentials missing. Email notifications disabled.");
-    return null;
-  }
-
-  cachedTransporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      type: "OAuth2",
-      user,
-      clientId,
-      clientSecret,
-      refreshToken
-    }
-  });
-
-  cachedTransporter.verify((error) => {
-    if (error) console.error("❌ Gmail OAuth2 verify failed:", error.message);
-    else console.log("✅ Gmail OAuth2 SMTP ready for", user);
-  });
-
-  return cachedTransporter;
-};
-
+// Pinqoza-style SMTP-only transport
 const withTimeout = (promise, ms, label) =>
   Promise.race([
     promise,
@@ -979,5 +945,6 @@ start().catch((err) => {
 });
 
 // Force nodemon restart
+
 
 
