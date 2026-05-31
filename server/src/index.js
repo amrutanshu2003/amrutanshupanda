@@ -947,7 +947,7 @@ app.post("/api/contact", async (req, res) => {
     return res.status(202).json({
       ok: true,
       mailDelivered: false,
-      warning: "Message saved, but email delivery is not configured.",
+      warning: `Message saved, but email delivery is not configured. ${JSON.stringify(mailState)}`,
       detail: JSON.stringify(mailState)
     });
   } catch (err) {
