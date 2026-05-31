@@ -98,6 +98,14 @@ const fallbackProfile = {
   socials: defaultSocials
 };
 
+const SKILL_SUGGESTIONS = [
+  "Python", "Flask", "Django", "FastAPI", "JavaScript", "TypeScript", "Node.js", "Express",
+  "React", "Next.js", "Vue", "Angular", "Svelte", "HTML5", "CSS3", "Tailwind CSS",
+  "Bootstrap", "MongoDB", "PostgreSQL", "MySQL", "Redis", "Firebase", "Git", "GitHub",
+  "Docker", "Kubernetes", "Nginx", "Linux", "REST APIs", "GraphQL", "Java", "Spring Boot",
+  "C", "C++", "C#", ".NET", "Go", "Rust", "PHP", "Laravel", "Cloudflare", "Vercel", "AWS"
+];
+
 function ThemeToggle() {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
   const isLight = theme === "light";
@@ -1086,6 +1094,7 @@ function Admin({ profile, setProfile }) {
 
   // Local skills state for full CRUD management
   const [localSkills, setLocalSkills] = useState(profile?.skills || []);
+  const [skillQuery, setSkillQuery] = useState("");
 
   // Sync localSkills when profile loads/changes
   useEffect(() => {
@@ -1149,13 +1158,20 @@ function Admin({ profile, setProfile }) {
   };
 
   const handleAddSkillClick = () => {
+    addSkill(skillQuery);
+    setSkillQuery("");
     const input = document.getElementById("new-skill-input");
-    if (input) {
-      addSkill(input.value);
-      input.value = "";
-      input.focus();
-    }
+    if (input) input.focus();
   };
+
+  const normalizedSkillQuery = String(skillQuery || "").trim().toLowerCase();
+  const skillSuggestions = normalizedSkillQuery
+    ? SKILL_SUGGESTIONS.filter((item) => {
+        const itemNormalized = item.toLowerCase();
+        if (!itemNormalized.includes(normalizedSkillQuery)) return false;
+        return !localSkills.some((s) => s.toLowerCase() === itemNormalized);
+      }).slice(0, 8)
+    : [];
 
   const addProject = () => {
     setLocalProjects((prev) => [
@@ -1619,6 +1635,8 @@ function Admin({ profile, setProfile }) {
                 id="new-skill-input"
                 type="text"
                 placeholder="e.g. Docker, TypeScript, AWS..."
+                value={skillQuery}
+                onChange={(e) => setSkillQuery(e.target.value)}
                 style={{ flex: 1, margin: 0 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -1662,6 +1680,25 @@ function Admin({ profile, setProfile }) {
                 Add
               </button>
             </div>
+            {skillSuggestions.length > 0 && (
+              <div className="skill-suggestions" role="listbox" aria-label="Skill Suggestions">
+                {skillSuggestions.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className="skill-suggestion-item"
+                    onClick={() => {
+                      addSkill(item);
+                      setSkillQuery("");
+                    }}
+                  >
+                    <span className="skill-live-dot" aria-hidden="true" />
+                    {getSkillIcon(item, "skill-chip-icon")}
+                    <span>{item}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <button type="submit">Save Changes</button>
