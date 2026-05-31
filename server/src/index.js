@@ -39,8 +39,8 @@ const getSmtpConfig = () => {
   const user = String(process.env.SMTP_USER || "").trim();
   const pass = String(process.env.SMTP_PASS || "").replace(/\s+/g, "");
   const host = String(process.env.SMTP_HOST || "smtp.gmail.com").trim();
-  const rawPort = Number(process.env.SMTP_PORT || 587);
-  const port = Number.isFinite(rawPort) && rawPort > 0 ? rawPort : 587;
+  const rawPort = Number(process.env.SMTP_PORT || 465);
+  const port = Number.isFinite(rawPort) && rawPort > 0 ? rawPort : 465;
   const secure = String(process.env.SMTP_SECURE || (port === 465 ? "true" : "false")).toLowerCase() === "true";
   return { user, pass, host, port, secure };
 };
@@ -134,16 +134,6 @@ const sendViaGmailApi = async (mailOptions, label = "email") => {
   return { messageId: sendData.id, provider: "gmail-api" };
 };
 
-const getSmtpTargets = async (host) => {
-  try {
-    const addresses = await dns.promises.resolve4(host);
-    const uniqueAddresses = [...new Set(addresses)];
-    return uniqueAddresses.length ? uniqueAddresses : [host];
-  } catch {
-    return [host];
-  }
-};
-
 const sendViaSmtp = async (mailOptions, label = "email") => {
   const { user, pass, host, port, secure } = getSmtpConfig();
   if (!host || !user || !pass) {
@@ -152,63 +142,38 @@ const sendViaSmtp = async (mailOptions, label = "email") => {
     throw error;
   }
 
-  const configured = { port, secure };
-  const fallbacks = host === "smtp.gmail.com"
-    ? [
-        configured,
-        { port: 587, secure: false },
-        { port: 465, secure: true }
-      ]
-    : [configured];
-  const ports = fallbacks.filter((item, index, list) =>
-    list.findIndex((other) => other.port === item.port && other.secure === item.secure) === index
-  );
-  const targets = await getSmtpTargets(host);
-  const errors = [];
-
-  for (const target of targets) {
-    for (const option of ports) {
-      const transporter = nodemailer.createTransport({
-        host: target,
-        port: option.port,
-        secure: option.secure,
-        requireTLS: !option.secure,
-        connectionTimeout: smtpSendTimeoutMs,
-        greetingTimeout: smtpSendTimeoutMs,
-        socketTimeout: smtpSendTimeoutMs,
-        dnsTimeout: 5000,
-        tls: {
-          servername: host,
-          rejectUnauthorized: true
-        },
-        auth: { user, pass }
-      });
-
-      try {
-        return await withTimeout(
-          transporter.sendMail({
-            ...mailOptions,
-            from: mailOptions.from || `"Portfolio" <${user}>`
-          }),
-          smtpSendTimeoutMs + 2000,
-          `${label} SMTP send`
-        );
-      } catch (err) {
-        errors.push(`${target}:${option.port}/${option.secure ? "ssl" : "tls"}=${err?.message || err}`);
-      } finally {
-        transporter.close();
-      }
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+    connectionTimeout: smtpSendTimeoutMs,
+    greetingTimeout: smtpSendTimeoutMs,
+    socketTimeout: smtpSendTimeoutMs,
+    dnsTimeout: 5000,
+    family: 4,
+    tls: {
+      servername: host,
+      rejectUnauthorized: true
     }
-  }
+  });
 
-  throw new Error(errors.join(" || ") || `${label} SMTP send failed`);
+  try {
+    return await withTimeout(
+      transporter.sendMail({
+        ...mailOptions,
+        from: mailOptions.from || `"Portfolio" <${user}>`
+      }),
+      smtpSendTimeoutMs + 2000,
+      `${label} SMTP send`
+    );
+  } finally {
+    transporter.close();
+  }
 };
 
 const sendMailReliable = async (mailOptions, label = "email") => {
   const gmailApi = getGmailApiConfig();
-  const smtp = getSmtpConfig();
-  const isRender = String(process.env.RENDER || "").toLowerCase() === "true";
-  const allowRenderSmtp = String(process.env.ALLOW_RENDER_SMTP || "").toLowerCase() === "true";
   const errors = [];
   if (gmailApi.ready) {
     try {
@@ -216,12 +181,6 @@ const sendMailReliable = async (mailOptions, label = "email") => {
     } catch (err) {
       errors.push(`gmail-api=${err?.message || err}`);
     }
-  }
-
-  if (isRender && smtp.host === "smtp.gmail.com" && !allowRenderSmtp) {
-    throw new Error(
-      "Render free web services block outbound SMTP ports 25/465/587. Gmail SMTP cannot connect from this service. Configure Gmail API env vars (GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, GMAIL_FROM) to send over HTTPS, or set ALLOW_RENDER_SMTP=true only if this Render service is paid and SMTP is allowed."
-    );
   }
 
   try {
@@ -794,8 +753,43 @@ app.get("/api/admin/mail-debug", async (_req, res) => {
       dnsError: smtpDnsError || null
     },
     note:
-      "If SMTP times out on Render, it is a network path/port issue. Configure Gmail API env vars to send over HTTPS instead."
+      "Mail uses the same Gmail SMTP pattern as Pinqoza. GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET are for Google login, not SMTP mail."
   });
+});
+
+app.post("/api/admin/mail-test", async (_req, res) => {
+  const to = process.env.CONTACT_TO || process.env.SMTP_USER;
+  if (!to) {
+    return res.status(500).json({ ok: false, error: "CONTACT_TO or SMTP_USER is missing" });
+  }
+
+  try {
+    const info = await sendMailReliable(
+      {
+        to,
+        subject: "Portfolio mail test",
+        html: `
+          <div style="font-family:Arial,sans-serif;padding:20px;color:#111827;">
+            <h2 style="margin:0 0 10px;">Portfolio mail test passed</h2>
+            <p style="margin:0;">Your Render backend can send email with the current mail configuration.</p>
+          </div>
+        `
+      },
+      "admin test email"
+    );
+    return res.json({
+      ok: true,
+      provider: info?.provider || "smtp",
+      accepted: info?.accepted || [],
+      messageId: info?.messageId || ""
+    });
+  } catch (err) {
+    return res.status(502).json({
+      ok: false,
+      error: "Mail test failed",
+      detail: String(err?.message || err)
+    });
+  }
 });
 
 app.post("/api/contact", async (req, res) => {
