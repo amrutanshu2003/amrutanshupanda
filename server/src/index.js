@@ -844,6 +844,40 @@ app.post("/api/contact", async (req, res) => {
         
       };
 
+      const [ownerResult, visitorResult] = await Promise.allSettled([
+        transporter.sendMail(notificationMailOptions),
+        transporter.sendMail(autoReplyMailOptions)
+      ]);
+
+      const ownerOk = ownerResult.status === "fulfilled";
+      const visitorOk = visitorResult.status === "fulfilled";
+
+      if (ownerOk) {
+        console.log("Owner Email notification sent successfully:", ownerResult.value.messageId);
+      } else {
+        console.error("Failed to send owner email notification:", ownerResult.reason?.message || ownerResult.reason);
+      }
+
+      if (visitorOk) {
+        console.log("Visitor Auto-Reply sent successfully:", visitorResult.value.messageId);
+      } else {
+        console.error("Failed to send visitor auto-reply:", visitorResult.reason?.message || visitorResult.reason);
+      }
+
+      if (!ownerOk && !visitorOk) {
+        return res.status(502).json({
+          ok: false,
+          error: "Message saved but email delivery failed. Check SMTP settings."
+        });
+      }
+
+      return res.json({
+        ok: true,
+        mailDelivered: ownerOk || visitorOk,
+        ownerDelivered: ownerOk,
+        visitorDelivered: visitorOk
+      });
+
       // Send owner notification
       transporter.sendMail(notificationMailOptions)
         .then((info) => console.log("✉️ Owner Email notification sent successfully:", info.messageId))
@@ -855,7 +889,11 @@ app.post("/api/contact", async (req, res) => {
         .catch((err) => console.error("❌ Failed to send visitor auto-reply:", err.message));
     }
 
-    return res.json({ ok: true });
+    return res.status(202).json({
+      ok: true,
+      mailDelivered: false,
+      warning: "Message saved, but SMTP is not configured."
+    });
   } catch (err) {
     console.error("Error processing contact form:", err);
     return res.status(500).json({ ok: false, error: "Could not process contact form message" });

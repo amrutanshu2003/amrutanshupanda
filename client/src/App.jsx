@@ -543,8 +543,14 @@ function Home({ profile }) {
       message: form.get("message")
     };
     try {
-      await api("/contact", { method: "POST", body: JSON.stringify(payload) });
-      setStatus("Message sent and saved.");
+      const out = await api("/contact", { method: "POST", body: JSON.stringify(payload) });
+      if (out.warning) {
+        setStatus(out.warning);
+      } else if (out.mailDelivered === false) {
+        setStatus("Message saved, but email delivery is not configured.");
+      } else {
+        setStatus("Message sent and saved.");
+      }
       formEl.reset();
     } catch (err) {
       setStatus(err.message);
