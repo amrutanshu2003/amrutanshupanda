@@ -376,6 +376,14 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "portfolio-mern-api" });
 });
 
+app.get("/", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "portfolio-mern-api",
+    message: "API is running. Use /api/health or /api/profile"
+  });
+});
+
 app.get("/api/favicon", async (_req, res) => {
   try {
     await ensureProfile();
