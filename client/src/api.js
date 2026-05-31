@@ -8,20 +8,24 @@ export const setAdminToken = () => {};
 export const clearAdminToken = () => localStorage.removeItem(ADMIN_TOKEN_KEY);
 
 export async function api(path, options = {}) {
+  const startedAt = Date.now();
+  const requestUrl = `${API_URL}${path}`;
   let res;
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(requestUrl, {
       credentials: "include",
       headers: { "Content-Type": "application/json", ...(options.headers || {}) },
       ...options
     });
   } catch {
-    throw new Error(`Cannot connect to API server (${API_URL}). Please check deployment and API URL.`);
+    const took = Date.now() - startedAt;
+    throw new Error(`Cannot connect to API server (${API_URL}). url=${requestUrl} took=${took}ms`);
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const extra = data?.detail ? ` (${data.detail})` : "";
-    const err = new Error((data.error || "Request failed") + extra);
+    const took = Date.now() - startedAt;
+    const err = new Error((data.error || "Request failed") + extra + ` [status=${res.status} url=${requestUrl} took=${took}ms]`);
     err.status = res.status;
     throw err;
   }
