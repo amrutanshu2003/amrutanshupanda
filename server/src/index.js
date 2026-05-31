@@ -68,9 +68,9 @@ const getSmartTransporter = () => {
         socket.once("connect", () => done(null, { connection: socket }));
       });
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 7000,
+    greetingTimeout: 7000,
+    socketTimeout: 7000,
     tls: { servername: host },
     auth: { user, pass }
   });
@@ -892,8 +892,8 @@ app.post("/api/contact", async (req, res) => {
       };
 
       const [ownerResult, visitorResult] = await Promise.allSettled([
-        transporter.sendMail(notificationMailOptions),
-        transporter.sendMail(autoReplyMailOptions)
+        withTimeout(transporter.sendMail(notificationMailOptions), 7000, "owner email"),
+        withTimeout(transporter.sendMail(autoReplyMailOptions), 7000, "visitor email")
       ]);
 
       const ownerOk = ownerResult.status === "fulfilled";
