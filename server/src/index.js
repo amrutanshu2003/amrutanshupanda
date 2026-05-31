@@ -6,7 +6,6 @@ import morgan from "morgan";
 import jwt from "jsonwebtoken";
 import { timingSafeEqual } from "node:crypto";
 import dns from "node:dns";
-import net from "node:net";
 
 import Profile from "./models/Profile.js";
 import Message from "./models/Message.js";
@@ -28,61 +27,99 @@ cloudinary.config({
 
 const app = express();
 
-// Pinqoza-style SMTP-only transport
 const withTimeout = (promise, ms, label) =>
   Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out`)), ms))
   ]);
 
-const getSmartTransporter = () => {
-  const cached = getSmartTransporter._cached;
-  if (cached) return cached;
+const smtpSendTimeoutMs = 18000;
 
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const port = Number(process.env.SMTP_PORT || 465);
-  const secure =
-    String(process.env.SMTP_SECURE || (port === 465 ? "true" : "false")).toLowerCase() === "true";
+const getSmtpConfig = () => {
+  const user = String(process.env.SMTP_USER || "").trim();
+  const pass = String(process.env.SMTP_PASS || "").replace(/\s+/g, "");
+  const host = String(process.env.SMTP_HOST || "smtp.gmail.com").trim();
+  const rawPort = Number(process.env.SMTP_PORT || 587);
+  const port = Number.isFinite(rawPort) && rawPort > 0 ? rawPort : 587;
+  const secure = String(process.env.SMTP_SECURE || (port === 465 ? "true" : "false")).toLowerCase() === "true";
+  return { user, pass, host, port, secure };
+};
 
-  if (!host || !user || !pass) return null;
+const getSmtpTargets = async (host) => {
+  try {
+    const addresses = await dns.promises.resolve4(host);
+    const uniqueAddresses = [...new Set(addresses)];
+    return uniqueAddresses.length ? uniqueAddresses : [host];
+  } catch {
+    return [host];
+  }
+};
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    requireTLS: !secure,
-    lookup: (hostname, _opts, cb) => dns.lookup(hostname, { family: 4 }, cb),
-    // Hard-force IPv4 SMTP socket (Render IPv6 route often unavailable for Gmail).
-    getSocket: (options, done) => {
-      dns.resolve4(options.host, (err, addresses) => {
-        if (err || !addresses?.length) {
-          return done(err || new Error("No IPv4 SMTP address found"));
-        }
-        const socket = net.connect({
-          host: addresses[0],
-          port: options.port
-        });
-        socket.once("error", (socketErr) => done(socketErr));
-        socket.once("connect", () => done(null, { connection: socket }));
+const sendViaSmtp = async (mailOptions, label = "email") => {
+  const { user, pass, host, port, secure } = getSmtpConfig();
+  if (!host || !user || !pass) {
+    const error = new Error("SMTP is not configured");
+    error.code = "SMTP_NOT_CONFIGURED";
+    throw error;
+  }
+
+  const configured = { port, secure };
+  const fallbacks = host === "smtp.gmail.com"
+    ? [
+        configured,
+        { port: 587, secure: false },
+        { port: 465, secure: true }
+      ]
+    : [configured];
+  const ports = fallbacks.filter((item, index, list) =>
+    list.findIndex((other) => other.port === item.port && other.secure === item.secure) === index
+  );
+  const targets = await getSmtpTargets(host);
+  const errors = [];
+
+  for (const target of targets) {
+    for (const option of ports) {
+      const transporter = nodemailer.createTransport({
+        host: target,
+        port: option.port,
+        secure: option.secure,
+        requireTLS: !option.secure,
+        connectionTimeout: smtpSendTimeoutMs,
+        greetingTimeout: smtpSendTimeoutMs,
+        socketTimeout: smtpSendTimeoutMs,
+        dnsTimeout: 5000,
+        tls: {
+          servername: host,
+          rejectUnauthorized: true
+        },
+        auth: { user, pass }
       });
-    },
-    connectionTimeout: 7000,
-    greetingTimeout: 7000,
-    socketTimeout: 7000,
-    tls: { servername: host },
-    auth: { user, pass }
-  });
-  getSmartTransporter._cached = transporter;
-  return transporter;
+
+      try {
+        return await withTimeout(
+          transporter.sendMail({
+            ...mailOptions,
+            from: mailOptions.from || `"Portfolio" <${user}>`
+          }),
+          smtpSendTimeoutMs + 2000,
+          `${label} SMTP send`
+        );
+      } catch (err) {
+        errors.push(`${target}:${option.port}/${option.secure ? "ssl" : "tls"}=${err?.message || err}`);
+      } finally {
+        transporter.close();
+      }
+    }
+  }
+
+  throw new Error(errors.join(" || ") || `${label} SMTP send failed`);
 };
 
 const getMailConfigState = () => {
-  const smtpHost = String(process.env.SMTP_HOST || "").trim();
+  const smtpHost = String(process.env.SMTP_HOST || "smtp.gmail.com").trim();
   const smtpPort = String(process.env.SMTP_PORT || "").trim();
   const smtpUser = String(process.env.SMTP_USER || "").trim();
-  const smtpPass = String(process.env.SMTP_PASS || "").trim();
+  const smtpPass = String(process.env.SMTP_PASS || "").replace(/\s+/g, "");
   return {
     smtpReady: Boolean(smtpHost && smtpUser && smtpPass),
     hasSmtpHost: Boolean(smtpHost),
@@ -660,10 +697,10 @@ app.post("/api/contact", async (req, res) => {
       emailSocials = defaultProfile.socials.filter((s) => s.showInEmail !== false && s.url && s.platform);
     }
 
-    // 3. Send email notification via Nodemailer (Elastic Email port 2525)
-    const transporter = getSmartTransporter();
+    // 3. Send email notification via Gmail SMTP.
+    const mailState = getMailConfigState();
     const mailSender = process.env.MAIL_FROM || process.env.SMTP_USER || "";
-    if (transporter) {
+    if (mailState.smtpReady) {
       let profilePicHtml = "";
       const emailSocialsHtml = emailSocials.map((s) => `
         <td style="padding: 0 8px;">
@@ -891,10 +928,17 @@ app.post("/api/contact", async (req, res) => {
         
       };
 
-      const [ownerResult, visitorResult] = await Promise.allSettled([
-        withTimeout(transporter.sendMail(notificationMailOptions), 7000, "owner email"),
-        withTimeout(transporter.sendMail(autoReplyMailOptions), 7000, "visitor email")
-      ]);
+      const ownerResult = await sendViaSmtp(notificationMailOptions, "owner email").then(
+        (value) => ({ status: "fulfilled", value }),
+        (reason) => ({ status: "rejected", reason })
+      );
+
+      const visitorResult = ownerResult.status === "fulfilled"
+        ? await sendViaSmtp(autoReplyMailOptions, "visitor email").then(
+            (value) => ({ status: "fulfilled", value }),
+            (reason) => ({ status: "rejected", reason })
+          )
+        : { status: "skipped", reason: new Error("Skipped because owner email failed") };
 
       const ownerOk = ownerResult.status === "fulfilled";
       const visitorOk = visitorResult.status === "fulfilled";
@@ -929,7 +973,6 @@ app.post("/api/contact", async (req, res) => {
       });
     }
 
-    const mailState = getMailConfigState();
     return res.status(202).json({
       ok: true,
       mailDelivered: false,

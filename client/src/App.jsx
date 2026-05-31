@@ -544,7 +544,7 @@ function Home({ profile }) {
     };
     setToast({ show: true, message: "Sending message...", type: "info" });
     try {
-      const out = await api("/contact", { method: "POST", body: JSON.stringify(payload) });
+      const out = await api("/contact", { method: "POST", body: JSON.stringify(payload), timeoutMs: 45000 });
       if (out.warning) {
         setStatus(out.detail ? `${out.warning} (${out.detail})` : out.warning);
       } else if (out.mailDelivered === false) {
