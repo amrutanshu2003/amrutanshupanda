@@ -60,6 +60,35 @@ const getGmailApiConfig = () => {
   };
 };
 
+const getRequestBaseUrl = (req) => {
+  const envUrl = String(process.env.BACKEND_PUBLIC_URL || process.env.API_PUBLIC_URL || "").replace(/\/$/, "");
+  if (envUrl) return envUrl;
+  const host = req?.get?.("x-forwarded-host") || req?.get?.("host") || "";
+  const protocol = (req?.get?.("x-forwarded-proto") || req?.protocol || "https").split(",")[0];
+  return host ? `${protocol}://${host}` : "";
+};
+
+const getGmailRedirectUri = (req) => {
+  const envRedirect = String(process.env.GMAIL_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || "").trim();
+  if (envRedirect) return envRedirect;
+  const baseUrl = getRequestBaseUrl(req);
+  return `${baseUrl}/api/gmail/oauth/callback`;
+};
+
+const buildGmailOAuthUrl = (req) => {
+  const { clientId, clientSecret } = getGmailApiConfig();
+  if (!clientId || !clientSecret) return "";
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: getGmailRedirectUri(req),
+    response_type: "code",
+    scope: "https://www.googleapis.com/auth/gmail.send",
+    access_type: "offline",
+    prompt: "consent"
+  });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+};
+
 const encodeBase64Url = (value) =>
   Buffer.from(value)
     .toString("base64")
@@ -259,7 +288,9 @@ const getMailConfigState = () => {
     hasGoogleRefreshTokenAlias: Boolean(process.env.GOOGLE_REFRESH_TOKEN),
     smtpForceIpv4: String(process.env.SMTP_FORCE_IPV4 || "true").toLowerCase() !== "false",
     isRender: String(process.env.RENDER || "").toLowerCase() === "true",
-    allowRenderSmtp: String(process.env.ALLOW_RENDER_SMTP || "").toLowerCase() === "true"
+    allowRenderSmtp: String(process.env.ALLOW_RENDER_SMTP || "").toLowerCase() === "true",
+    hasBackendPublicUrl: Boolean(process.env.BACKEND_PUBLIC_URL || process.env.API_PUBLIC_URL),
+    hasGmailRedirectUri: Boolean(process.env.GMAIL_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI)
   };
 };
 
@@ -792,6 +823,11 @@ app.get("/api/admin/mail-debug", async (_req, res) => {
     ok: true,
     providerOrder: gmailApi.ready ? ["gmail-api", "smtp"] : ["smtp"],
     config: getMailConfigState(),
+    gmailApi: {
+      ready: gmailApi.ready,
+      setupUrl: buildGmailOAuthUrl(_req) || null,
+      redirectUri: getGmailRedirectUri(_req)
+    },
     smtp: {
       host: smtp.host,
       port: smtp.port,
@@ -801,7 +837,7 @@ app.get("/api/admin/mail-debug", async (_req, res) => {
       dnsError: smtpDnsError || null
     },
     note:
-      "Mail uses the same Gmail SMTP pattern as Pinqoza. GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET are for Google login, not SMTP mail."
+      "SMTP is timing out on this Render service. Use gmailApi.setupUrl once, then add the returned GMAIL_REFRESH_TOKEN to Render env."
   });
 });
 
@@ -842,6 +878,83 @@ const runAdminMailTest = async (_req, res) => {
 
 app.get("/api/admin/mail-test", runAdminMailTest);
 app.post("/api/admin/mail-test", runAdminMailTest);
+
+app.get("/api/admin/gmail-oauth-url", (req, res) => {
+  const gmailApi = getGmailApiConfig();
+  const url = buildGmailOAuthUrl(req);
+  if (!url) {
+    return res.status(400).json({
+      ok: false,
+      error: "GMAIL_CLIENT_ID/GMAIL_CLIENT_SECRET or GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET is missing"
+    });
+  }
+  return res.json({
+    ok: true,
+    gmailApiReady: gmailApi.ready,
+    redirectUri: getGmailRedirectUri(req),
+    url
+  });
+});
+
+app.get("/api/gmail/oauth/callback", async (req, res) => {
+  const code = String(req.query.code || "");
+  const oauthError = String(req.query.error || "");
+  const gmailApi = getGmailApiConfig();
+
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+
+  if (oauthError) {
+    return res.status(400).send(`<pre>Google OAuth failed: ${escapeHtml(oauthError)}</pre>`);
+  }
+  if (!code) {
+    return res.status(400).send("<pre>Missing Google OAuth code.</pre>");
+  }
+  if (!gmailApi.clientId || !gmailApi.clientSecret) {
+    return res.status(500).send("<pre>Missing Google client id/client secret on server.</pre>");
+  }
+
+  try {
+    const tokenResponse = await withTimeout(
+      fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: gmailApi.clientId,
+          client_secret: gmailApi.clientSecret,
+          code,
+          grant_type: "authorization_code",
+          redirect_uri: getGmailRedirectUri(req)
+        })
+      }),
+      12000,
+      "Gmail OAuth token exchange"
+    );
+    const tokenData = await tokenResponse.json().catch(() => ({}));
+    if (!tokenResponse.ok || !tokenData.refresh_token) {
+      const detail = escapeHtml(tokenData.error_description || tokenData.error || tokenResponse.status);
+      return res.status(400).send(`
+        <pre>Could not create refresh token.
+${detail}
+
+Try opening the OAuth setup URL again. If Google does not return a refresh token, remove this app from your Google Account access and approve again.</pre>
+      `);
+    }
+
+    const refreshToken = escapeHtml(tokenData.refresh_token);
+    const from = escapeHtml(gmailApi.from || process.env.SMTP_USER || "");
+    return res.send(`
+      <div style="font-family:Arial,sans-serif;max-width:820px;margin:40px auto;padding:24px;border:1px solid #d1d5db;border-radius:12px;color:#111827;">
+        <h2 style="margin-top:0;">Gmail API connected</h2>
+        <p>Add these variables in Render, then redeploy your backend.</p>
+        <pre style="white-space:pre-wrap;background:#f3f4f6;padding:16px;border-radius:8px;">GMAIL_REFRESH_TOKEN=${refreshToken}
+GMAIL_FROM=${from}</pre>
+        <p>After redeploy, open <code>/api/admin/mail-test</code> again.</p>
+      </div>
+    `);
+  } catch (err) {
+    return res.status(500).send(`<pre>OAuth callback failed: ${escapeHtml(err?.message || err)}</pre>`);
+  }
+});
 
 app.post("/api/contact", async (req, res) => {
   const { name, email, subject, message } = req.body || {};
