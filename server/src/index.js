@@ -69,34 +69,19 @@ const withTimeout = (promise, ms, label) =>
   ]);
 
 const getSmartTransporter = () => {
-  const oauthUser = process.env.GMAIL_USER;
-  const clientId = process.env.GMAIL_CLIENT_ID;
-  const clientSecret = process.env.GMAIL_CLIENT_SECRET;
-  const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
-
-  if (oauthUser && clientId && clientSecret && refreshToken) {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: oauthUser,
-        clientId,
-        clientSecret,
-        refreshToken
-      }
-    });
-  }
+  const cached = getSmartTransporter._cached;
+  if (cached) return cached;
 
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const port = Number(process.env.SMTP_PORT || 587);
+  const port = Number(process.env.SMTP_PORT || 465);
   const secure =
     String(process.env.SMTP_SECURE || (port === 465 ? "true" : "false")).toLowerCase() === "true";
 
-  if (!user || !pass) return null;
+  if (!host || !user || !pass) return null;
 
-  return nodemailer.createTransport({
+  const transporter = nodemailer.createTransport({
     host,
     port,
     secure,
@@ -107,24 +92,21 @@ const getSmartTransporter = () => {
     socketTimeout: 15000,
     auth: { user, pass }
   });
+  getSmartTransporter._cached = transporter;
+  return transporter;
 };
 
 const getMailConfigState = () => {
+  const smtpHost = String(process.env.SMTP_HOST || "").trim();
+  const smtpPort = String(process.env.SMTP_PORT || "").trim();
   const smtpUser = String(process.env.SMTP_USER || "").trim();
   const smtpPass = String(process.env.SMTP_PASS || "").trim();
-  const gmailUser = String(process.env.GMAIL_USER || "").trim();
-  const gmailClientId = String(process.env.GMAIL_CLIENT_ID || "").trim();
-  const gmailClientSecret = String(process.env.GMAIL_CLIENT_SECRET || "").trim();
-  const gmailRefresh = String(process.env.GMAIL_REFRESH_TOKEN || "").trim();
   return {
-    smtpReady: Boolean(smtpUser && smtpPass),
-    oauthReady: Boolean(gmailUser && gmailClientId && gmailClientSecret && gmailRefresh),
+    smtpReady: Boolean(smtpHost && smtpUser && smtpPass),
+    hasSmtpHost: Boolean(smtpHost),
+    hasSmtpPort: Boolean(smtpPort),
     hasSmtpUser: Boolean(smtpUser),
-    hasSmtpPass: Boolean(smtpPass),
-    hasGmailUser: Boolean(gmailUser),
-    hasGmailClientId: Boolean(gmailClientId),
-    hasGmailClientSecret: Boolean(gmailClientSecret),
-    hasGmailRefreshToken: Boolean(gmailRefresh)
+    hasSmtpPass: Boolean(smtpPass)
   };
 };
 
@@ -661,7 +643,7 @@ app.post("/api/contact", async (req, res) => {
     });
 
     // 2. Fetch recipient details dynamically from Profile Document
-    let receiverEmail = process.env.CONTACT_TO || process.env.GMAIL_USER || process.env.SMTP_USER || "amrutanshu20003@gmail.com";
+    let receiverEmail = process.env.CONTACT_TO || process.env.SMTP_USER || "amrutanshu20003@gmail.com";
     let receiverName = "Amrutanshu Panda";
     let receiverImage = "";
     let emailSocials = [];
@@ -686,7 +668,7 @@ app.post("/api/contact", async (req, res) => {
 
     // 3. Send email notification via Nodemailer (Elastic Email port 2525)
     const transporter = getSmartTransporter();
-    const mailSender = process.env.MAIL_FROM || process.env.GMAIL_USER || process.env.SMTP_USER || "";
+    const mailSender = process.env.MAIL_FROM || process.env.SMTP_USER || "";
     if (transporter) {
       let profilePicHtml = "";
       const emailSocialsHtml = emailSocials.map((s) => `
