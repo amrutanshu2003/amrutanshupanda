@@ -546,7 +546,7 @@ function Home({ profile }) {
     try {
       const out = await api("/contact", { method: "POST", body: JSON.stringify(payload) });
       if (out.warning) {
-        setStatus(out.warning);
+        setStatus(out.detail ? `${out.warning} (${out.detail})` : out.warning);
       } else if (out.mailDelivered === false) {
         setStatus("Message saved, but email delivery is not configured.");
       } else {
