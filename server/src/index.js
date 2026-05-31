@@ -394,6 +394,8 @@ app.get("/", (_req, res) => {
 
 app.get("/api/favicon", async (_req, res) => {
   try {
+    res.set("Cross-Origin-Resource-Policy", "cross-origin");
+    res.set("Access-Control-Allow-Origin", "*");
     await ensureProfile();
     const profile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
     const raw = String(profile?.profile_image_data || "").trim();
