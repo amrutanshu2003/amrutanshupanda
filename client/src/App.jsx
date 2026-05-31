@@ -1057,10 +1057,52 @@ function Home({ profile }) {
 
             <div className="contact-form-container">
               <form onSubmit={submitContact} className="form">
-                <input name="name" placeholder="Your name" required />
-                <input name="email" type="email" placeholder="you@example.com" required />
-                <input name="subject" placeholder="⚡ Collaboration Brief" />
-                <textarea name="message" rows={5} placeholder="🧩 Share your goal, scope, and timeline..." required />
+                <div className="input-with-icon">
+                  <input name="name" placeholder="Your name" required />
+                  <svg viewBox="0 0 24 24" className="field-icon google-contacts-field-icon" aria-hidden="true">
+                    <rect x="2" y="2" width="20" height="20" rx="4.5" fill="#4285F4" />
+                    <circle cx="12" cy="12" r="6" fill="#FFFFFF" />
+                    <circle cx="12" cy="10.2" r="2" fill="#4285F4" />
+                    <path d="M12 13c-2.4 0-4.4 1.2-4.8 2.8.2.2.4.4.7.4h8.2c.3 0 .5-.2.7-.4-.4-1.6-2.4-2.8-4.8-2.8z" fill="#4285F4" />
+                  </svg>
+                </div>
+                <div className="input-with-icon">
+                  <input name="email" type="email" placeholder="you@example.com" required />
+                  <svg viewBox="52 42 88 66" className="field-icon gmail-field-icon" aria-hidden="true">
+                    <path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6" />
+                    <path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15" />
+                    <path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2" />
+                    <path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92" />
+                    <path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2" />
+                  </svg>
+                </div>
+                <div className="input-with-icon">
+                  <input name="subject" placeholder="Collaboration Brief" />
+                  <svg viewBox="0 0 24 24" className="field-icon sticky-notes-field-icon" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="stickyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#FFF176" />
+                        <stop offset="100%" stopColor="#FBC02D" />
+                      </linearGradient>
+                      <linearGradient id="foldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#F57F17" />
+                        <stop offset="100%" stopColor="#F9A825" />
+                      </linearGradient>
+                      <filter id="foldShadow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="-0.5" dy="-0.5" stdDeviation="0.6" floodOpacity="0.25" />
+                      </filter>
+                    </defs>
+                    <path d="M4 3h16a1 1 0 0 1 1 1v11l-6 6H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="url(#stickyGrad)" />
+                    <path d="M21 15h-5a1 1 0 0 0-1 1v5z" fill="url(#foldGrad)" filter="url(#foldShadow)" />
+                  </svg>
+                </div>
+                <div className="input-with-icon textarea-icon-wrapper">
+                  <textarea name="message" rows={5} placeholder="Share your goal, scope, and timeline..." required />
+                  <svg viewBox="0 0 24 24" className="field-icon google-chat-field-icon" aria-hidden="true">
+                    <path fill="#0b8043" d="M7.533 0a1.816 1.816 0 0 0-1.816 1.816v2.832h11.178c1.043 0 1.888.855 1.888 1.91v8.204h2.906a1.816 1.816 0 0 0 1.817-1.817V1.816A1.816 1.816 0 0 0 21.689 0H7.533z" />
+                    <path fill="#34a853" d="M2.311 5.148A1.816 1.816 0 0 0 .494 6.965V23.09c0 .81.979 1.215 1.55.642l3.749-3.748h10.674a1.816 1.816 0 0 0 1.816-1.816V6.965a1.816 1.816 0 0 0-1.816-1.817H2.31Z" />
+                  </svg>
+                </div>
                 <button type="submit">
                   Send Message
                   <svg viewBox="0 0 24 24" className="submit-btn-icon" aria-hidden="true">
@@ -2315,17 +2357,29 @@ function Admin({ profile, setProfile }) {
                 </button>
               </header>
               <div className="message-subject-row">
-                <svg viewBox="0 0 24 24" className="message-subject-icon" aria-hidden="true">
-                  <path d="M4 7h16" />
-                  <path d="M7 3v8" />
-                  <path d="M17 3v8" />
-                  <rect x="3" y="7" width="18" height="12" rx="2" ry="2" />
+                <svg viewBox="0 0 24 24" className="message-subject-icon sticky-notes-field-icon" aria-hidden="true" style={{ flexShrink: 0 }}>
+                  <defs>
+                    <linearGradient id={`stickyGrad-msg-${m._id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FFF176" />
+                      <stop offset="100%" stopColor="#FBC02D" />
+                    </linearGradient>
+                    <linearGradient id={`foldGrad-msg-${m._id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#F57F17" />
+                      <stop offset="100%" stopColor="#F9A825" />
+                    </linearGradient>
+                    <filter id={`foldShadow-msg-${m._id}`} x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="-0.5" dy="-0.5" stdDeviation="0.6" floodOpacity="0.25" />
+                    </filter>
+                  </defs>
+                  <path d="M4 3h16a1 1 0 0 1 1 1v11l-6 6H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill={`url(#stickyGrad-msg-${m._id})`} />
+                  <path d="M21 15h-5a1 1 0 0 0-1 1v5z" fill={`url(#foldGrad-msg-${m._id})`} filter={`url(#foldShadow-msg-${m._id})`} />
                 </svg>
                 <span className="message-subject">{m.subject || "General Inquiry"}</span>
               </div>
               <div className="message-body-wrap">
-                <svg viewBox="0 0 24 24" className="message-body-icon" aria-hidden="true">
-                  <path d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+                <svg viewBox="0 0 24 24" className="message-body-icon google-chat-field-icon" aria-hidden="true" style={{ flexShrink: 0, marginTop: "2px" }}>
+                  <path fill="#0b8043" d="M7.533 0a1.816 1.816 0 0 0-1.816 1.816v2.832h11.178c1.043 0 1.888.855 1.888 1.91v8.204h2.906a1.816 1.816 0 0 0 1.817-1.817V1.816A1.816 1.816 0 0 0 21.689 0H7.533z" />
+                  <path fill="#34a853" d="M2.311 5.148A1.816 1.816 0 0 0 .494 6.965V23.09c0 .81.979 1.215 1.55.642l3.749-3.748h10.674a1.816 1.816 0 0 0 1.816-1.816V6.965a1.816 1.816 0 0 0-1.816-1.817H2.31Z" />
                 </svg>
                 <p className="message-body">{m.message || ""}</p>
               </div>

@@ -47,6 +47,25 @@
   --tooltip-text: var(--heading);
 }
 
+:root[data-theme="light"] input,
+:root[data-theme="light"] textarea {
+  border-color: rgba(25, 28, 23, 0.18);
+  color: var(--text);
+  background: var(--surface);
+}
+
+:root[data-theme="light"] input:focus,
+:root[data-theme="light"] textarea:focus {
+  border-color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(8, 127, 108, 0.12);
+}
+
+:root[data-theme="light"] ::placeholder {
+  color: var(--soft);
+}
+
+
 * {
   box-sizing: border-box;
 }
@@ -2285,6 +2304,18 @@ textarea:focus {
   transform: scale(1.05);
 }
 
+:root[data-theme="light"] .copy-card-btn {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: var(--soft);
+}
+
+:root[data-theme="light"] .copy-card-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(8, 127, 108, 0.3);
+  color: var(--accent);
+}
+
 .copy-icon {
   width: 12px;
   height: 12px;
@@ -2454,6 +2485,73 @@ textarea:focus {
   gap: 16px;
 }
 
+/* Premium Input Fields with Embedded Icons */
+.input-with-icon {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .field-icon {
+  position: absolute;
+  left: 16px;
+  width: 18px;
+  height: 18px;
+  color: rgba(246, 241, 232, 0.45);
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+}
+
+:root[data-theme="light"] .input-with-icon .field-icon {
+  color: rgba(78, 85, 76, 0.6);
+}
+
+.input-with-icon input,
+.input-with-icon textarea {
+  padding-left: 48px !important;
+}
+
+/* Dynamic Hover and Focus States for Embedded Icons */
+.input-with-icon input:focus ~ .field-icon,
+.input-with-icon textarea:focus ~ .field-icon {
+  color: var(--accent);
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 4px rgba(89, 214, 180, 0.3));
+}
+
+:root[data-theme="light"] .input-with-icon input:focus ~ .field-icon,
+:root[data-theme="light"] .input-with-icon textarea:focus ~ .field-icon {
+  filter: drop-shadow(0 0 4px rgba(8, 127, 108, 0.3));
+}
+
+.input-with-icon:hover .field-icon {
+  color: var(--accent);
+}
+
+/* Textarea specific alignment adjustments for icons */
+.input-with-icon.textarea-icon-wrapper {
+  align-items: flex-start;
+}
+
+.input-with-icon.textarea-icon-wrapper .field-icon {
+  top: 17px;
+}
+
+.input-with-icon.textarea-icon-wrapper textarea {
+  padding-top: 15px !important;
+}
+
+/* Maintain original vector fills for brand input icons (Gmail, Chat, Contacts, Sticky Notes) */
+.gmail-field-icon,
+.google-chat-field-icon,
+.google-contacts-field-icon,
+.sticky-notes-field-icon {
+  fill: unset !important;
+  stroke: none !important;
+}
+
 .contact-form-container input,
 .contact-form-container textarea {
   width: 100%;
@@ -2591,23 +2689,37 @@ textarea:focus {
 
 :root[data-theme="light"] .contact-form-container input,
 :root[data-theme="light"] .contact-form-container textarea {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(8, 127, 108, 0.22);
   color: var(--text);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.02),
+    0 4px 12px rgba(0, 0, 0, 0.01);
+}
+
+:root[data-theme="light"] .contact-form-container input::placeholder,
+:root[data-theme="light"] .contact-form-container textarea::placeholder {
+  color: rgba(78, 85, 76, 0.75); /* Highly visible, elegant muted teal-gray text */
+  opacity: 1; /* Prevent browser defaults from reducing contrast */
 }
 
 :root[data-theme="light"] .contact-form-container input:hover,
 :root[data-theme="light"] .contact-form-container textarea:hover {
   background: rgba(255, 255, 255, 1);
-  border-color: rgba(0, 0, 0, 0.22);
+  border-color: rgba(8, 127, 108, 0.45);
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.01),
+    0 6px 16px rgba(8, 127, 108, 0.06);
 }
 
 :root[data-theme="light"] .contact-form-container input:focus,
 :root[data-theme="light"] .contact-form-container textarea:focus {
   background: rgba(255, 255, 255, 1);
   border-color: var(--accent);
-  box-shadow: 0 0 20px rgba(89, 214, 180, 0.15);
+  box-shadow: 
+    0 0 0 4px rgba(8, 127, 108, 0.12),
+    0 8px 24px rgba(8, 127, 108, 0.08);
+  transform: translateY(-2px);
 }
 
 .contact-panel .section-heading h3 {
