@@ -109,6 +109,25 @@ const getSmartTransporter = () => {
   });
 };
 
+const getMailConfigState = () => {
+  const smtpUser = String(process.env.SMTP_USER || "").trim();
+  const smtpPass = String(process.env.SMTP_PASS || "").trim();
+  const gmailUser = String(process.env.GMAIL_USER || "").trim();
+  const gmailClientId = String(process.env.GMAIL_CLIENT_ID || "").trim();
+  const gmailClientSecret = String(process.env.GMAIL_CLIENT_SECRET || "").trim();
+  const gmailRefresh = String(process.env.GMAIL_REFRESH_TOKEN || "").trim();
+  return {
+    smtpReady: Boolean(smtpUser && smtpPass),
+    oauthReady: Boolean(gmailUser && gmailClientId && gmailClientSecret && gmailRefresh),
+    hasSmtpUser: Boolean(smtpUser),
+    hasSmtpPass: Boolean(smtpPass),
+    hasGmailUser: Boolean(gmailUser),
+    hasGmailClientId: Boolean(gmailClientId),
+    hasGmailClientSecret: Boolean(gmailClientSecret),
+    hasGmailRefreshToken: Boolean(gmailRefresh)
+  };
+};
+
 const getEmailSocialIconUrl = (iconName) => {
   const icon = String(iconName || "").toLowerCase();
   switch (icon) {
@@ -924,10 +943,12 @@ app.post("/api/contact", async (req, res) => {
       });
     }
 
+    const mailState = getMailConfigState();
     return res.status(202).json({
       ok: true,
       mailDelivered: false,
-      warning: "Message saved, but SMTP is not configured."
+      warning: "Message saved, but email delivery is not configured.",
+      detail: JSON.stringify(mailState)
     });
   } catch (err) {
     console.error("Error processing contact form:", err);
