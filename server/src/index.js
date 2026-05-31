@@ -5,12 +5,19 @@ import mongoose from "mongoose";
 import morgan from "morgan";
 import jwt from "jsonwebtoken";
 import { timingSafeEqual } from "node:crypto";
+import dns from "node:dns";
 
 import Profile from "./models/Profile.js";
 import Message from "./models/Message.js";
 import defaultProfile from "./seed/defaultProfile.js";
 import nodemailer from "nodemailer";
 import { v2 as cloudinary } from "cloudinary";
+
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {
+  // ignore on older Node runtimes
+}
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
