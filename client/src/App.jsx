@@ -542,6 +542,7 @@ function Home({ profile }) {
       subject: form.get("subject"),
       message: form.get("message")
     };
+    setToast({ show: true, message: "Sending message...", type: "info" });
     try {
       const out = await api("/contact", { method: "POST", body: JSON.stringify(payload) });
       if (out.warning) {
