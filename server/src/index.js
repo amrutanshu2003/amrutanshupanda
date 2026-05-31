@@ -27,7 +27,8 @@ cloudinary.config({
 
 const app = express();
 
-// Transporter setup for email notifications with connection pooling
+// Nodemailer transporter via Elastic Email SMTP port 2525
+// Port 2525 is NOT blocked by Render free tier (unlike 25/465/587)
 let cachedTransporter = null;
 
 const getTransporter = () => {
@@ -35,38 +36,25 @@ const getTransporter = () => {
 
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  
-  // Default to secure SMTPS port 465 for Gmail to bypass cloud outbound port 587/25 blocks
-  const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const port = Number(process.env.SMTP_PORT || (host === "smtp.gmail.com" ? 465 : 587));
-  const secure =
-    String(process.env.SMTP_SECURE || (port === 465 ? "true" : "false")).toLowerCase() === "true";
+  const host = process.env.SMTP_HOST || "smtp.elasticemail.com";
+  const port = Number(process.env.SMTP_PORT || 2525);
 
   if (!user || !pass) {
-    console.log("⚠️ SMTP_USER or SMTP_PASS is missing in .env. Email notifications are disabled.");
+    console.log("⚠️ SMTP_USER or SMTP_PASS is missing. Email notifications disabled.");
     return null;
   }
 
   cachedTransporter = nodemailer.createTransport({
     host,
     port,
-    secure,
+    secure: false,
     auth: { user, pass },
-    tls: {
-      rejectUnauthorized: false // Bypasses SSL validation errors on cloud hosting servers
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000
+    tls: { rejectUnauthorized: false }
   });
 
-  // Verify the connection configuration on creation
   cachedTransporter.verify((error) => {
-    if (error) {
-      console.error("❌ SMTP Transporter warm pooling verification failed:", error.message);
-    } else {
-      console.log("🚀 SMTP Connection Pool is warm and ready to dispatch emails instantly!");
-    }
+    if (error) console.error("❌ SMTP verify failed:", error.message);
+    else console.log("✅ SMTP ready via", host, "port", port);
   });
 
   return cachedTransporter;
@@ -634,7 +622,7 @@ app.post("/api/contact", async (req, res) => {
       emailSocials = defaultProfile.socials.filter((s) => s.showInEmail !== false && s.url && s.platform);
     }
 
-    // 3. Send email notification asynchronously via Nodemailer (if configured)
+    // 3. Send email notification via Nodemailer (Elastic Email port 2525)
     const transporter = getTransporter();
     if (transporter) {
       let profilePicHtml = "";
@@ -657,7 +645,7 @@ app.post("/api/contact", async (req, res) => {
 
       profilePicHtml = `<a href="${FRONTEND_ORIGIN}" target="_blank" style="text-decoration: none; display: inline-block; border-radius: 50%;">${profilePicHtml}</a>`;
 
-      // A. Mail options for Amrutanshu Panda (Owner notification)
+      // A. Owner notification email
       const notificationMailOptions = {
         from: `"${receiverName} Portfolio" <${process.env.SMTP_USER}>`,
         to: receiverEmail,
@@ -773,7 +761,7 @@ app.post("/api/contact", async (req, res) => {
         
       };
 
-      // B. Mail options for the Sender (Visitor auto-reply)
+      // B. Auto-reply email for visitor
       const autoReplyMailOptions = {
         from: `"${receiverName}" <${process.env.SMTP_USER}>`,
         to: cleanEmail,
@@ -865,37 +853,23 @@ app.post("/api/contact", async (req, res) => {
       };
 
       const [ownerResult, visitorResult] = await Promise.allSettled([
-        withTimeout(transporter.sendMail(notificationMailOptions), 12000, "Owner mail"),
-        withTimeout(transporter.sendMail(autoReplyMailOptions), 12000, "Visitor mail")
+        transporter.sendMail(notificationMailOptions),
+        transporter.sendMail(autoReplyMailOptions)
       ]);
 
       const ownerOk = ownerResult.status === "fulfilled";
       const visitorOk = visitorResult.status === "fulfilled";
 
       if (ownerOk) {
-        console.log("Owner Email notification sent successfully:", ownerResult.value.messageId);
+        console.log("✅ Owner email sent:", ownerResult.value.messageId);
       } else {
-        console.error("Failed to send owner email notification:", ownerResult.reason?.message || ownerResult.reason);
+        console.error("❌ Owner email failed:", ownerResult.reason?.message || ownerResult.reason);
       }
 
       if (visitorOk) {
-        console.log("Visitor Auto-Reply sent successfully:", visitorResult.value.messageId);
+        console.log("✅ Visitor auto-reply sent:", visitorResult.value.messageId);
       } else {
-        console.error("Failed to send visitor auto-reply:", visitorResult.reason?.message || visitorResult.reason);
-      }
-
-      if (!ownerOk && !visitorOk) {
-        const ownerErr = String(ownerResult.reason?.message || ownerResult.reason || "unknown");
-        const visitorErr = String(visitorResult.reason?.message || visitorResult.reason || "unknown");
-        console.error(`⚠️ SMTP Email dispatch timed out or failed: owner=${ownerErr} | visitor=${visitorErr}`);
-        
-        // Return 200 OK so that the frontend successfully informs the user that their message is saved in MongoDB.
-        // It prevents scary red connection timeout alerts for successful message submissions.
-        return res.json({
-          ok: true,
-          mailDelivered: false,
-          warning: "Message saved, but email notification timed out."
-        });
+        console.error("❌ Visitor auto-reply failed:", visitorResult.reason?.message || visitorResult.reason);
       }
 
       return res.json({
@@ -904,16 +878,6 @@ app.post("/api/contact", async (req, res) => {
         ownerDelivered: ownerOk,
         visitorDelivered: visitorOk
       });
-
-      // Send owner notification
-      transporter.sendMail(notificationMailOptions)
-        .then((info) => console.log("✉️ Owner Email notification sent successfully:", info.messageId))
-        .catch((err) => console.error("❌ Failed to send owner email notification:", err.message));
-
-      // Send auto-reply acknowledgement to the visitor
-      transporter.sendMail(autoReplyMailOptions)
-        .then((info) => console.log("✉️ Visitor Auto-Reply sent successfully:", info.messageId))
-        .catch((err) => console.error("❌ Failed to send visitor auto-reply:", err.message));
     }
 
     return res.status(202).json({
