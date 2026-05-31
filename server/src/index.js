@@ -874,9 +874,12 @@ app.post("/api/contact", async (req, res) => {
       }
 
       if (!ownerOk && !visitorOk) {
+        const ownerErr = String(ownerResult.reason?.message || ownerResult.reason || "unknown");
+        const visitorErr = String(visitorResult.reason?.message || visitorResult.reason || "unknown");
         return res.status(502).json({
           ok: false,
-          error: "Message saved but email delivery failed. Check SMTP settings."
+          error: "Message saved but email delivery failed. Check SMTP settings.",
+          detail: `owner=${ownerErr} | visitor=${visitorErr}`
         });
       }
 

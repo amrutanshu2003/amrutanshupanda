@@ -20,7 +20,8 @@ export async function api(path, options = {}) {
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data.error || "Request failed");
+    const extra = data?.detail ? ` (${data.detail})` : "";
+    const err = new Error((data.error || "Request failed") + extra);
     err.status = res.status;
     throw err;
   }
