@@ -43,6 +43,9 @@ const getTransporter = () => {
     maxMessages: 100,
     rateDelta: 1000,
     rateLimit: 5,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     auth: { user, pass }
   });
 
@@ -57,6 +60,12 @@ const getTransporter = () => {
 
   return cachedTransporter;
 };
+
+const withTimeout = (promise, ms, label) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out`)), ms))
+  ]);
 
 const getEmailSocialIconUrl = (iconName) => {
   const icon = String(iconName || "").toLowerCase();
@@ -845,8 +854,8 @@ app.post("/api/contact", async (req, res) => {
       };
 
       const [ownerResult, visitorResult] = await Promise.allSettled([
-        transporter.sendMail(notificationMailOptions),
-        transporter.sendMail(autoReplyMailOptions)
+        withTimeout(transporter.sendMail(notificationMailOptions), 12000, "Owner mail"),
+        withTimeout(transporter.sendMail(autoReplyMailOptions), 12000, "Visitor mail")
       ]);
 
       const ownerOk = ownerResult.status === "fulfilled";
