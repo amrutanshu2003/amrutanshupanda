@@ -108,6 +108,19 @@ const buildRawEmail = ({ from, to, replyTo, subject, html }) => {
   return encodeBase64Url(`${headers.join("\r\n")}\r\n\r\n${html}`);
 };
 
+const readJsonOrText = async (response) => {
+  const text = await response.text().catch(() => "");
+  let json = null;
+  if (text) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      json = null;
+    }
+  }
+  return { json, text };
+};
+
 const sendViaGmailApi = async (mailOptions, label = "email") => {
   const config = getGmailApiConfig();
   if (!config.ready) {
@@ -131,9 +144,15 @@ const sendViaGmailApi = async (mailOptions, label = "email") => {
     12000,
     `${label} Gmail API token`
   );
-  const tokenData = await tokenResponse.json().catch(() => ({}));
+  const tokenParsed = await readJsonOrText(tokenResponse);
+  const tokenData = tokenParsed.json || {};
   if (!tokenResponse.ok || !tokenData.access_token) {
-    throw new Error(`Gmail API token failed: ${tokenData.error_description || tokenData.error || tokenResponse.status}`);
+    const tokenMsg =
+      tokenData.error_description ||
+      tokenData.error ||
+      tokenParsed.text ||
+      `HTTP ${tokenResponse.status}`;
+    throw new Error(`Gmail API token failed (${tokenResponse.status}): ${tokenMsg}`);
   }
 
   const from = mailOptions.from || config.from;
@@ -157,9 +176,11 @@ const sendViaGmailApi = async (mailOptions, label = "email") => {
     18000,
     `${label} Gmail API send`
   );
-  const sendData = await sendResponse.json().catch(() => ({}));
+  const sendParsed = await readJsonOrText(sendResponse);
+  const sendData = sendParsed.json || {};
   if (!sendResponse.ok) {
-    throw new Error(`Gmail API send failed: ${sendData.error?.message || sendData.error || sendResponse.status}`);
+    const sendMsg = sendData.error?.message || sendData.error || sendParsed.text || `HTTP ${sendResponse.status}`;
+    throw new Error(`Gmail API send failed (${sendResponse.status}): ${sendMsg}`);
   }
   return { messageId: sendData.id, provider: "gmail-api" };
 };
@@ -929,9 +950,15 @@ app.get("/api/gmail/oauth/callback", async (req, res) => {
       12000,
       "Gmail OAuth token exchange"
     );
-    const tokenData = await tokenResponse.json().catch(() => ({}));
+    const tokenParsed = await readJsonOrText(tokenResponse);
+    const tokenData = tokenParsed.json || {};
     if (!tokenResponse.ok || !tokenData.refresh_token) {
-      const detail = escapeHtml(tokenData.error_description || tokenData.error || tokenResponse.status);
+      const detail = escapeHtml(
+        tokenData.error_description ||
+          tokenData.error ||
+          tokenParsed.text ||
+          `HTTP ${tokenResponse.status}`
+      );
       return res.status(400).send(`
         <pre>Could not create refresh token.
 ${detail}
