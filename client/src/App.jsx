@@ -317,10 +317,13 @@ const getSkillIcon = (skillName, className = "") => {
   
   if (skill.includes("python")) {
     return (
-      <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
-        <path fill="#3776AB" d="M11.95 2c-4.03 0-3.78 1.74-3.78 1.74v1.8h3.85v.54H6.66S4 5.8 4 10.02c0 4.22 2.32 4.07 2.32 4.07h1.38v-1.94s-.08-2.32 2.28-2.32h3.9s2.2.03 2.2-2.12V4.2S16.4 2 12.02 2h-.07zm-2.13 1.21a.7.7 0 1 1 0 1.4.7.7 0 0 1 0-1.4z"/>
-        <path fill="#FFD43B" d="M12.06 22c4.03 0 3.78-1.74 3.78-1.74v-1.8h-3.85v-.54h5.36S20 18.2 20 13.98c0-4.22-2.32-4.07-2.32-4.07H16.3v1.94s.08 2.32-2.28 2.32h-3.9s-2.2-.03-2.2 2.12v3.5S7.6 22 11.98 22h.08zm2.12-1.21a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4z"/>
-      </svg>
+      <img
+        src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg"
+        alt=""
+        className={className}
+        aria-hidden="true"
+        style={{ width: "18px", height: "18px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}
+      />
     );
   }
   
@@ -371,10 +374,13 @@ const getSkillIcon = (skillName, className = "") => {
   
   if (skill.includes("flask")) {
     return (
-      <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
-        <path fill="#ffffff" d="M9 2h6v2h-1v4.3l5.8 9.2A2.5 2.5 0 0 1 17.7 21H6.3a2.5 2.5 0 0 1-2.1-3.5L10 8.3V4H9V2zm3 7.1-5 8h10l-5-8z"/>
-        <circle cx="16.6" cy="17.2" r="1.1" fill="#4FC3F7"/>
-      </svg>
+      <img
+        src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flask/flask-original.svg"
+        alt=""
+        className={`${className} flask-skill-icon`.trim()}
+        aria-hidden="true"
+        style={{ width: "18px", height: "18px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}
+      />
     );
   }
   
