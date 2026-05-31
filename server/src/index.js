@@ -36,7 +36,7 @@ const getTransporter = () => {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const port = Number(process.env.SMTP_PORT || 465);
+  const port = Number(process.env.SMTP_PORT || 587);
   const secure =
     String(process.env.SMTP_SECURE || (port === 465 ? "true" : "false")).toLowerCase() === "true";
 
@@ -45,20 +45,24 @@ const getTransporter = () => {
     return null;
   }
 
-  cachedTransporter = nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100,
-    rateDelta: 1000,
-    rateLimit: 5,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-    auth: { user, pass }
-  });
+  cachedTransporter = nodemailer.createTransport(
+    (host === "smtp.gmail.com" || process.env.SMTP_SERVICE === "gmail")
+      ? {
+          service: "gmail",
+          auth: { user, pass }
+        }
+      : {
+          host,
+          port,
+          secure,
+          family: 4,
+          requireTLS: !secure,
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
+          auth: { user, pass }
+        }
+  );
 
   // Verify the connection configuration on creation
   cachedTransporter.verify((error) => {
@@ -611,14 +615,14 @@ app.post("/api/contact", async (req, res) => {
     });
 
     // 2. Fetch recipient details dynamically from Profile Document
-    let receiverEmail = "amrutanshu20003@gmail.com";
+    let receiverEmail = process.env.CONTACT_TO || process.env.SMTP_USER || "amrutanshu20003@gmail.com";
     let receiverName = "Amrutanshu Panda";
     let receiverImage = "";
     let emailSocials = [];
     try {
       const profile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
       if (profile) {
-        if (profile.email) receiverEmail = profile.email;
+        if (!process.env.CONTACT_TO && profile.email) receiverEmail = profile.email;
         if (profile.name) receiverName = profile.name;
         if (profile.profile_image_data) receiverImage = profile.profile_image_data;
         if (profile.socials && profile.socials.length > 0) {
