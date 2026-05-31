@@ -376,6 +376,14 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "portfolio-mern-api" });
 });
 
+app.get("/api", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "portfolio-mern-api",
+    endpoints: ["/api/health", "/api/profile"]
+  });
+});
+
 app.get("/", (_req, res) => {
   res.json({
     ok: true,
