@@ -883,6 +883,16 @@ app.post("/api/contact", async (req, res) => {
         console.error("❌ Visitor auto-reply failed:", visitorResult.reason?.message || visitorResult.reason);
       }
 
+      if (!ownerOk) {
+        const ownerErr = String(ownerResult.reason?.message || ownerResult.reason || "unknown");
+        const visitorErr = String(visitorResult.reason?.message || visitorResult.reason || "unknown");
+        return res.status(502).json({
+          ok: false,
+          error: "Message saved but owner email could not be delivered.",
+          detail: `owner=${ownerErr} | visitor=${visitorErr}`
+        });
+      }
+
       return res.json({
         ok: true,
         mailDelivered: ownerOk || visitorOk,
