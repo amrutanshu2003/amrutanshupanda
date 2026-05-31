@@ -680,7 +680,7 @@ button {
   margin-top: 24px;
 }
 
-.chips span {
+.chips > span {
   display: inline-flex;
   align-items: center;
   padding: 10px 18px;
@@ -715,6 +715,27 @@ button {
   vertical-align: middle;
 }
 
+.skill-live-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  margin-right: 6px;
+  flex-shrink: 0;
+  background: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.7);
+  animation: skill-dot-pulse 2s ease-in-out infinite;
+}
+
+.chips .skill-live-dot,
+.admin-skill-chip .skill-live-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 4px;
+}
+
 .flask-skill-icon {
   filter: brightness(0) invert(1);
 }
@@ -724,7 +745,7 @@ button {
 }
 
 /* Hover effects */
-.chips span:hover {
+.chips > span:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(89, 214, 180, 0.45);
   color: var(--accent);
@@ -735,8 +756,24 @@ button {
     0 0 0 1px rgba(89, 214, 180, 0.08);
 }
 
-.chips span:hover .skill-chip-icon {
+.chips > span:hover .skill-chip-icon {
   transform: scale(1.22) rotate(6deg);
+}
+
+.chips > span:hover .skill-live-dot {
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.24), 0 0 14px rgba(52, 211, 153, 0.95);
+}
+
+@keyframes skill-dot-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
 }
 
 

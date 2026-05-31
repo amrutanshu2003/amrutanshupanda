@@ -736,6 +736,7 @@ function Home({ profile }) {
           <div className="chips">
             {profile.skills?.map((s) => (
               <span key={s} style={{ display: "inline-flex", alignItems: "center" }}>
+                <span className="skill-live-dot" aria-hidden="true" />
                 {getSkillIcon(s, "skill-chip-icon")}
                 {s}
               </span>
@@ -1496,6 +1497,7 @@ function Admin({ profile, setProfile }) {
                     cursor: "default"
                   }}
                 >
+                  <span className="skill-live-dot" aria-hidden="true" />
                   {getSkillIcon(skill, "skill-chip-icon")}
                   {skill}
                   <button
