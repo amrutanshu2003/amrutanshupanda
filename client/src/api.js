@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const normalizedApiBase = String(rawApiUrl).replace(/\/+$/, "");
+const API_URL = /\/api$/i.test(normalizedApiBase) ? normalizedApiBase : `${normalizedApiBase}/api`;
 const ADMIN_TOKEN_KEY = "portfolio_admin_token";
 
 export const getAdminToken = () => "";
