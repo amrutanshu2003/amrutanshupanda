@@ -1059,8 +1059,8 @@ function Home({ profile }) {
               <form onSubmit={submitContact} className="form">
                 <input name="name" placeholder="Your name" required />
                 <input name="email" type="email" placeholder="you@example.com" required />
-                <input name="subject" placeholder="Project inquiry" />
-                <textarea name="message" rows={5} placeholder="Tell me about your project..." required />
+                <input name="subject" placeholder="⚡ Collaboration Brief" />
+                <textarea name="message" rows={5} placeholder="🧩 Share your goal, scope, and timeline..." required />
                 <button type="submit">
                   Send Message
                   <svg viewBox="0 0 24 24" className="submit-btn-icon" aria-hidden="true">
@@ -1080,6 +1080,7 @@ function Home({ profile }) {
 
 function Admin({ profile, setProfile }) {
   const [messages, setMessages] = useState([]);
+  const [visibleMessagesCount, setVisibleMessagesCount] = useState(3);
   const [status, setStatus] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const [needsAuth, setNeedsAuth] = useState(false);
@@ -1405,11 +1406,27 @@ function Admin({ profile, setProfile }) {
   const deleteMessage = async (id) => {
     try {
       await api(`/admin/messages/${id}`, { method: "DELETE" });
-      setMessages((prev) => prev.filter((m) => m._id !== id));
+      setMessages((prev) => {
+        const next = prev.filter((m) => m._id !== id);
+        setVisibleMessagesCount((count) => Math.min(Math.max(3, count), Math.max(3, next.length)));
+        return next;
+      });
     } catch (e) {
       pushStatus(e.message);
     }
   };
+
+  const formatMessageDate = (value) => {
+    if (!value) return "Unknown time";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "Unknown time";
+    return new Intl.DateTimeFormat("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }).format(d);
+  };
+
+  const visibleMessages = messages.slice(0, visibleMessagesCount);
 
   if (!profile) return <p className="loading">Loading admin...</p>;
   if (needsAuth) {
@@ -2262,19 +2279,87 @@ function Admin({ profile, setProfile }) {
           <h3>Messages</h3>
         </div>
         <div className="messages">
-          {messages.map((m) => (
-            <article key={m._id}>
-              <button className="icon-btn" onClick={() => deleteMessage(m._id)} aria-label="Delete">
-                x
-              </button>
-              <p>
-                <strong>{m.name}</strong> ({m.email})
-              </p>
-              <p>{m.subject}</p>
-              <p>{m.message}</p>
+          {visibleMessages.map((m) => (
+            <article key={m._id} className="admin-message-card">
+              <header className="message-card-head">
+                <div className="message-avatar" aria-hidden="true">
+                  {(m.name || "?").trim().slice(0, 1).toUpperCase()}
+                </div>
+                <div className="message-meta">
+                  <p className="message-name">{m.name || "Unknown Sender"}</p>
+                  <a className="message-email" href={`mailto:${m.email || ""}`}>
+                    <svg viewBox="52 42 88 66" aria-hidden="true">
+                      <path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6" />
+                      <path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15" />
+                      <path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2" />
+                      <path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92" />
+                      <path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2" />
+                    </svg>
+                    {m.email || "No email"}
+                  </a>
+                </div>
+                <div className="message-time-wrap">
+                  <svg viewBox="0 0 24 24" className="message-time-icon" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                  <time className="message-time">{formatMessageDate(m.createdAt)}</time>
+                </div>
+                <button className="icon-btn message-delete-btn" onClick={() => deleteMessage(m._id)} aria-label="Delete message">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M6 6l1 14h10l1-14" />
+                    <path d="M10 11v6M14 11v6" />
+                  </svg>
+                </button>
+              </header>
+              <div className="message-subject-row">
+                <svg viewBox="0 0 24 24" className="message-subject-icon" aria-hidden="true">
+                  <path d="M4 7h16" />
+                  <path d="M7 3v8" />
+                  <path d="M17 3v8" />
+                  <rect x="3" y="7" width="18" height="12" rx="2" ry="2" />
+                </svg>
+                <span className="message-subject">{m.subject || "General Inquiry"}</span>
+              </div>
+              <div className="message-body-wrap">
+                <svg viewBox="0 0 24 24" className="message-body-icon" aria-hidden="true">
+                  <path d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+                </svg>
+                <p className="message-body">{m.message || ""}</p>
+              </div>
             </article>
           ))}
-          {messages.length === 0 && <p>No messages yet.</p>}
+          {messages.length > 3 && (
+            <div className="messages-actions">
+              {visibleMessagesCount < messages.length && (
+                <button
+                  type="button"
+                  className="messages-action-btn"
+                  onClick={() => setVisibleMessagesCount((prev) => Math.min(messages.length, prev + 3))}
+                >
+                  <span>Load More Messages</span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+              )}
+              {visibleMessagesCount > 3 && (
+                <button
+                  type="button"
+                  className="messages-action-btn ghost"
+                  onClick={() => setVisibleMessagesCount(3)}
+                >
+                  <span>Show Less</span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 15l-6-6-6 6" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+          {messages.length === 0 && <p className="messages-empty">No messages yet.</p>}
         </div>
       </section>
 
@@ -3117,5 +3202,7 @@ export default function App() {
     </Routes>
   );
 }
+
+
 
 

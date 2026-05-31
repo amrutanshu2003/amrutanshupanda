@@ -1000,23 +1000,153 @@ button {
   color: rgba(247,200,115,0.5);
 }
 
-/* Message articles (keep existing) */
-.messages article {
+/* Admin Inbox Cards */
+.admin-message-card {
   position: relative;
   display: grid;
-  align-content: start;
+  gap: 12px;
   min-height: 0;
-  padding: 20px;
+  padding: 18px 18px 16px;
   overflow: hidden;
-  border: 1px solid rgba(246, 241, 232, 0.13);
-  border-radius: 8px;
-  background:
-    linear-gradient(145deg, rgba(89, 214, 180, 0.1), transparent 45%),
-    var(--card);
-  transition:
-    transform 200ms ease,
-    border-color 200ms ease,
-    background 200ms ease;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.admin-message-card:hover {
+  transform: translateY(-7px) scale(1.01);
+  border-color: rgba(247, 200, 115, 0.4);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.32);
+}
+
+.message-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.message-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #10120f;
+  background: linear-gradient(135deg, #59d6b4, #f7c873);
+}
+
+.message-meta {
+  min-width: 0;
+}
+
+.message-name {
+  margin: 0;
+  color: var(--heading);
+  font-weight: 800;
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.message-email {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--soft);
+  font-size: 0.84rem;
+  text-decoration: none;
+}
+
+.message-email svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.9;
+}
+
+.message-email:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.message-time-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.message-time-icon {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.8;
+}
+
+.message-subject-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(247, 200, 115, 0.35);
+  background: rgba(247, 200, 115, 0.1);
+}
+
+.message-subject-icon {
+  color: #f7c873;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.message-subject {
+  color: var(--heading);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.message-body-wrap {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.message-body-icon {
+  color: var(--accent);
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  line-height: 1.2;
+}
+
+.message-body {
+  margin: 0;
+  color: var(--soft);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .messages p {
@@ -1278,6 +1408,134 @@ textarea:focus {
   color: #fff7ee;
   background: rgba(255, 122, 89, 0.28);
   box-shadow: none;
+}
+
+.message-delete-btn {
+  position: static;
+  top: auto;
+  right: auto;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  background: rgba(255, 122, 89, 0.2);
+  border: 1px solid rgba(255, 122, 89, 0.35);
+}
+
+.message-delete-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.message-delete-btn:hover {
+  background: rgba(255, 122, 89, 0.3);
+  border-color: rgba(255, 122, 89, 0.55);
+}
+
+.messages-empty {
+  margin: 0;
+  padding: 14px 4px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.messages-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.messages-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(89, 214, 180, 0.35);
+  background: rgba(89, 214, 180, 0.12);
+  color: var(--heading);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.messages-action-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.messages-action-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(89, 214, 180, 0.65);
+  background: rgba(89, 214, 180, 0.2);
+}
+
+.messages-action-btn.ghost {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme="light"] .admin-message-card {
+  border-color: rgba(10, 20, 30, 0.18);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.94), rgba(250, 251, 252, 0.86));
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] .admin-message-card:hover {
+  border-color: rgba(8, 127, 108, 0.42);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme="light"] .message-body-wrap {
+  border-color: rgba(10, 20, 30, 0.14);
+  background: rgba(248, 250, 252, 0.96);
+}
+
+:root[data-theme="light"] .message-subject-row {
+  border-color: rgba(209, 158, 44, 0.55);
+  background: rgba(250, 220, 140, 0.26);
+}
+
+:root[data-theme="light"] .message-time-wrap {
+  color: #475569;
+}
+
+:root[data-theme="light"] .message-delete-btn {
+  border-color: rgba(234, 67, 53, 0.36);
+  background: rgba(234, 67, 53, 0.14);
+  color: #b3261e;
+}
+
+:root[data-theme="light"] .messages-action-btn {
+  border-color: rgba(8, 127, 108, 0.4);
+  background: rgba(8, 127, 108, 0.1);
+  color: #113b36;
+}
+
+:root[data-theme="light"] .messages-action-btn:hover {
+  border-color: rgba(8, 127, 108, 0.58);
+  background: rgba(8, 127, 108, 0.18);
+}
+
+:root[data-theme="light"] .messages-action-btn.ghost {
+  border-color: rgba(10, 20, 30, 0.34);
+  background: rgba(10, 20, 30, 0.09);
+  color: #1f2937;
 }
 
 .loading {
