@@ -6,6 +6,7 @@ import morgan from "morgan";
 import jwt from "jsonwebtoken";
 import { timingSafeEqual } from "node:crypto";
 import dns from "node:dns";
+import net from "node:net";
 
 import Profile from "./models/Profile.js";
 import Message from "./models/Message.js";
@@ -46,9 +47,9 @@ const getSmtpConfig = () => {
 };
 
 const getGmailApiConfig = () => {
-  const clientId = String(process.env.GMAIL_CLIENT_ID || "").trim();
-  const clientSecret = String(process.env.GMAIL_CLIENT_SECRET || "").trim();
-  const refreshToken = String(process.env.GMAIL_REFRESH_TOKEN || "").trim();
+  const clientId = String(process.env.GMAIL_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || "").trim();
+  const clientSecret = String(process.env.GMAIL_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || "").trim();
+  const refreshToken = String(process.env.GMAIL_REFRESH_TOKEN || process.env.GOOGLE_REFRESH_TOKEN || "").trim();
   const from = String(process.env.GMAIL_FROM || process.env.SMTP_USER || "").trim();
   return {
     ready: Boolean(clientId && clientSecret && refreshToken && from),
@@ -142,6 +143,7 @@ const sendViaSmtp = async (mailOptions, label = "email") => {
     throw error;
   }
 
+  const forceIpv4 = String(process.env.SMTP_FORCE_IPV4 || "true").toLowerCase() !== "false";
   const transporter = nodemailer.createTransport({
     host,
     port,
@@ -150,12 +152,47 @@ const sendViaSmtp = async (mailOptions, label = "email") => {
     connectionTimeout: smtpSendTimeoutMs,
     greetingTimeout: smtpSendTimeoutMs,
     socketTimeout: smtpSendTimeoutMs,
-    dnsTimeout: 5000,
-    family: 4,
-    tls: {
-      servername: host,
-      rejectUnauthorized: true
-    }
+    ...(forceIpv4
+      ? {
+          getSocket: (options, done) => {
+            dns.resolve4(host, (dnsErr, addresses) => {
+              if (dnsErr || !addresses?.length) {
+                return done(dnsErr || new Error(`No IPv4 address found for ${host}`));
+              }
+
+              let index = 0;
+              const errors = [];
+              const tryNext = () => {
+                const address = addresses[index++];
+                if (!address) {
+                  return done(new Error(errors.join(" | ") || `Could not connect to ${host} over IPv4`));
+                }
+
+                const socket = net.connect({ host: address, port: options.port });
+                const timer = setTimeout(() => {
+                  socket.destroy();
+                  errors.push(`${address}:${options.port}=timeout`);
+                  tryNext();
+                }, smtpSendTimeoutMs);
+
+                socket.once("error", (socketErr) => {
+                  clearTimeout(timer);
+                  errors.push(`${address}:${options.port}=${socketErr?.message || socketErr}`);
+                  tryNext();
+                });
+
+                socket.once("connect", () => {
+                  clearTimeout(timer);
+                  done(null, { connection: socket });
+                });
+              };
+
+              tryNext();
+            });
+          },
+          tls: { servername: host }
+        }
+      : {})
   });
 
   try {
@@ -193,6 +230,13 @@ const sendMailReliable = async (mailOptions, label = "email") => {
   throw new Error(errors.join(" || "));
 };
 
+const buildMailFrom = (name) => {
+  const customFrom = String(process.env.MAIL_FROM || process.env.SMTP_FROM || "").trim();
+  if (customFrom) return customFrom;
+  const user = String(process.env.SMTP_USER || "").trim();
+  return `"${name}" <${user}>`;
+};
+
 const getMailConfigState = () => {
   const smtpHost = String(process.env.SMTP_HOST || "smtp.gmail.com").trim();
   const smtpPort = String(process.env.SMTP_PORT || "").trim();
@@ -210,6 +254,10 @@ const getMailConfigState = () => {
     hasGmailClientSecret: Boolean(gmailApi.clientSecret),
     hasGmailRefreshToken: Boolean(gmailApi.refreshToken),
     hasGmailFrom: Boolean(gmailApi.from),
+    hasGoogleClientIdAlias: Boolean(process.env.GOOGLE_CLIENT_ID),
+    hasGoogleClientSecretAlias: Boolean(process.env.GOOGLE_CLIENT_SECRET),
+    hasGoogleRefreshTokenAlias: Boolean(process.env.GOOGLE_REFRESH_TOKEN),
+    smtpForceIpv4: String(process.env.SMTP_FORCE_IPV4 || "true").toLowerCase() !== "false",
     isRender: String(process.env.RENDER || "").toLowerCase() === "true",
     allowRenderSmtp: String(process.env.ALLOW_RENDER_SMTP || "").toLowerCase() === "true"
   };
@@ -851,7 +899,8 @@ app.post("/api/contact", async (req, res) => {
 
     // 3. Send email notification via Gmail SMTP.
     const mailState = getMailConfigState();
-    const mailSender = process.env.MAIL_FROM || process.env.SMTP_USER || "";
+    const ownerMailFrom = buildMailFrom(`${receiverName} Portfolio`);
+    const visitorMailFrom = buildMailFrom(receiverName);
     if (mailState.smtpReady) {
       let profilePicHtml = "";
       const emailSocialsHtml = emailSocials.map((s) => `
@@ -875,7 +924,7 @@ app.post("/api/contact", async (req, res) => {
 
       // A. Owner notification email
       const notificationMailOptions = {
-        from: `"${receiverName} Portfolio" <${mailSender}>`,
+        from: ownerMailFrom,
         to: receiverEmail,
         replyTo: cleanEmail,
         subject: `New Message from ${cleanName}: ${cleanSubject}`,
@@ -991,7 +1040,7 @@ app.post("/api/contact", async (req, res) => {
 
       // B. Auto-reply email for visitor
       const autoReplyMailOptions = {
-        from: `"${receiverName}" <${mailSender}>`,
+        from: visitorMailFrom,
         to: cleanEmail,
         subject: `Thanks for reaching out, ${cleanName.split(" ")[0]}!`,
         html: `
