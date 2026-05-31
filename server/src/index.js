@@ -328,9 +328,10 @@ app.post("/api/admin/login", (req, res) => {
   }
   const token = issueAdminToken();
   const isProd = process.env.NODE_ENV === "production";
+  const sameSite = isProd ? "None" : "Lax";
   res.setHeader(
     "Set-Cookie",
-    `admin_token=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200${
+    `admin_token=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=43200${
       isProd ? "; Secure" : ""
     }`
   );
@@ -339,9 +340,10 @@ app.post("/api/admin/login", (req, res) => {
 
 app.post("/api/admin/logout", (_req, res) => {
   const isProd = process.env.NODE_ENV === "production";
+  const sameSite = isProd ? "None" : "Lax";
   res.setHeader(
     "Set-Cookie",
-    `admin_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${isProd ? "; Secure" : ""}`
+    `admin_token=; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=0${isProd ? "; Secure" : ""}`
   );
   return res.json({ ok: true });
 });
