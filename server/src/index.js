@@ -6,6 +6,7 @@ import morgan from "morgan";
 import jwt from "jsonwebtoken";
 import { timingSafeEqual } from "node:crypto";
 import dns from "node:dns";
+import net from "node:net";
 
 import Profile from "./models/Profile.js";
 import Message from "./models/Message.js";
@@ -53,9 +54,24 @@ const getSmartTransporter = () => {
     secure,
     requireTLS: !secure,
     lookup: (hostname, _opts, cb) => dns.lookup(hostname, { family: 4 }, cb),
+    // Hard-force IPv4 SMTP socket (Render IPv6 route often unavailable for Gmail).
+    getSocket: (options, done) => {
+      dns.resolve4(options.host, (err, addresses) => {
+        if (err || !addresses?.length) {
+          return done(err || new Error("No IPv4 SMTP address found"));
+        }
+        const socket = net.connect({
+          host: addresses[0],
+          port: options.port
+        });
+        socket.once("error", (socketErr) => done(socketErr));
+        socket.once("connect", () => done(null, { connection: socket }));
+      });
+    },
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
+    tls: { servername: host },
     auth: { user, pass }
   });
   getSmartTransporter._cached = transporter;
