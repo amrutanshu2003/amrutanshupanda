@@ -27,34 +27,36 @@ cloudinary.config({
 
 const app = express();
 
-// Nodemailer transporter via Elastic Email SMTP port 2525
-// Port 2525 is NOT blocked by Render free tier (unlike 25/465/587)
+// Nodemailer with Gmail OAuth2 — uses Gmail API over HTTPS (port 443), never blocked by Render
 let cachedTransporter = null;
 
 const getTransporter = () => {
   if (cachedTransporter) return cachedTransporter;
 
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const host = process.env.SMTP_HOST || "smtp.elasticemail.com";
-  const port = Number(process.env.SMTP_PORT || 2525);
+  const user = process.env.GMAIL_USER;
+  const clientId = process.env.GMAIL_CLIENT_ID;
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET;
+  const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
 
-  if (!user || !pass) {
-    console.log("⚠️ SMTP_USER or SMTP_PASS is missing. Email notifications disabled.");
+  if (!user || !clientId || !clientSecret || !refreshToken) {
+    console.log("⚠️ Gmail OAuth2 credentials missing. Email notifications disabled.");
     return null;
   }
 
   cachedTransporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: false,
-    auth: { user, pass },
-    tls: { rejectUnauthorized: false }
+    service: "gmail",
+    auth: {
+      type: "OAuth2",
+      user,
+      clientId,
+      clientSecret,
+      refreshToken
+    }
   });
 
   cachedTransporter.verify((error) => {
-    if (error) console.error("❌ SMTP verify failed:", error.message);
-    else console.log("✅ SMTP ready via", host, "port", port);
+    if (error) console.error("❌ Gmail OAuth2 verify failed:", error.message);
+    else console.log("✅ Gmail OAuth2 SMTP ready for", user);
   });
 
   return cachedTransporter;
@@ -65,6 +67,47 @@ const withTimeout = (promise, ms, label) =>
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out`)), ms))
   ]);
+
+const getSmartTransporter = () => {
+  const oauthUser = process.env.GMAIL_USER;
+  const clientId = process.env.GMAIL_CLIENT_ID;
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET;
+  const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
+
+  if (oauthUser && clientId && clientSecret && refreshToken) {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: oauthUser,
+        clientId,
+        clientSecret,
+        refreshToken
+      }
+    });
+  }
+
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure =
+    String(process.env.SMTP_SECURE || (port === 465 ? "true" : "false")).toLowerCase() === "true";
+
+  if (!user || !pass) return null;
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    family: 4,
+    requireTLS: !secure,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    auth: { user, pass }
+  });
+};
 
 const getEmailSocialIconUrl = (iconName) => {
   const icon = String(iconName || "").toLowerCase();
@@ -599,7 +642,7 @@ app.post("/api/contact", async (req, res) => {
     });
 
     // 2. Fetch recipient details dynamically from Profile Document
-    let receiverEmail = process.env.CONTACT_TO || process.env.SMTP_USER || "amrutanshu20003@gmail.com";
+    let receiverEmail = process.env.CONTACT_TO || process.env.GMAIL_USER || process.env.SMTP_USER || "amrutanshu20003@gmail.com";
     let receiverName = "Amrutanshu Panda";
     let receiverImage = "";
     let emailSocials = [];
@@ -623,7 +666,8 @@ app.post("/api/contact", async (req, res) => {
     }
 
     // 3. Send email notification via Nodemailer (Elastic Email port 2525)
-    const transporter = getTransporter();
+    const transporter = getSmartTransporter();
+    const mailSender = process.env.MAIL_FROM || process.env.GMAIL_USER || process.env.SMTP_USER || "";
     if (transporter) {
       let profilePicHtml = "";
       const emailSocialsHtml = emailSocials.map((s) => `
@@ -647,7 +691,7 @@ app.post("/api/contact", async (req, res) => {
 
       // A. Owner notification email
       const notificationMailOptions = {
-        from: `"${receiverName} Portfolio" <${process.env.SMTP_USER}>`,
+        from: `"${receiverName} Portfolio" <${mailSender}>`,
         to: receiverEmail,
         replyTo: cleanEmail,
         subject: `New Message from ${cleanName}: ${cleanSubject}`,
@@ -763,7 +807,7 @@ app.post("/api/contact", async (req, res) => {
 
       // B. Auto-reply email for visitor
       const autoReplyMailOptions = {
-        from: `"${receiverName}" <${process.env.SMTP_USER}>`,
+        from: `"${receiverName}" <${mailSender}>`,
         to: cleanEmail,
         subject: `Thanks for reaching out, ${cleanName.split(" ")[0]}!`,
         html: `
