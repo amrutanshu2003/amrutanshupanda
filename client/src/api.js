@@ -16,7 +16,7 @@ export async function api(path, options = {}) {
       ...options
     });
   } catch {
-    throw new Error("Cannot connect to server. Please ensure backend is running on port 5000.");
+    throw new Error(`Cannot connect to API server (${API_URL}). Please check deployment and API URL.`);
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
