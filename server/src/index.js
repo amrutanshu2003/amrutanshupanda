@@ -45,6 +45,95 @@ const getSmtpConfig = () => {
   return { user, pass, host, port, secure };
 };
 
+const getGmailApiConfig = () => {
+  const clientId = String(process.env.GMAIL_CLIENT_ID || "").trim();
+  const clientSecret = String(process.env.GMAIL_CLIENT_SECRET || "").trim();
+  const refreshToken = String(process.env.GMAIL_REFRESH_TOKEN || "").trim();
+  const from = String(process.env.GMAIL_FROM || process.env.SMTP_USER || "").trim();
+  return {
+    ready: Boolean(clientId && clientSecret && refreshToken && from),
+    clientId,
+    clientSecret,
+    refreshToken,
+    from
+  };
+};
+
+const encodeBase64Url = (value) =>
+  Buffer.from(value)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+const buildRawEmail = ({ from, to, replyTo, subject, html }) => {
+  const headers = [
+    `From: ${from}`,
+    `To: ${to}`,
+    replyTo ? `Reply-To: ${replyTo}` : "",
+    `Subject: ${subject}`,
+    "MIME-Version: 1.0",
+    "Content-Type: text/html; charset=UTF-8"
+  ].filter(Boolean);
+  return encodeBase64Url(`${headers.join("\r\n")}\r\n\r\n${html}`);
+};
+
+const sendViaGmailApi = async (mailOptions, label = "email") => {
+  const config = getGmailApiConfig();
+  if (!config.ready) {
+    const error = new Error("Gmail API is not configured");
+    error.code = "GMAIL_API_NOT_CONFIGURED";
+    throw error;
+  }
+
+  const tokenBody = new URLSearchParams({
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    refresh_token: config.refreshToken,
+    grant_type: "refresh_token"
+  });
+  const tokenResponse = await withTimeout(
+    fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: tokenBody
+    }),
+    12000,
+    `${label} Gmail API token`
+  );
+  const tokenData = await tokenResponse.json().catch(() => ({}));
+  if (!tokenResponse.ok || !tokenData.access_token) {
+    throw new Error(`Gmail API token failed: ${tokenData.error_description || tokenData.error || tokenResponse.status}`);
+  }
+
+  const from = mailOptions.from || config.from;
+  const sendResponse = await withTimeout(
+    fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        raw: buildRawEmail({
+          from,
+          to: mailOptions.to,
+          replyTo: mailOptions.replyTo,
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        })
+      })
+    }),
+    18000,
+    `${label} Gmail API send`
+  );
+  const sendData = await sendResponse.json().catch(() => ({}));
+  if (!sendResponse.ok) {
+    throw new Error(`Gmail API send failed: ${sendData.error?.message || sendData.error || sendResponse.status}`);
+  }
+  return { messageId: sendData.id, provider: "gmail-api" };
+};
+
 const getSmtpTargets = async (host) => {
   try {
     const addresses = await dns.promises.resolve4(host);
@@ -115,17 +204,55 @@ const sendViaSmtp = async (mailOptions, label = "email") => {
   throw new Error(errors.join(" || ") || `${label} SMTP send failed`);
 };
 
+const sendMailReliable = async (mailOptions, label = "email") => {
+  const gmailApi = getGmailApiConfig();
+  const smtp = getSmtpConfig();
+  const isRender = String(process.env.RENDER || "").toLowerCase() === "true";
+  const allowRenderSmtp = String(process.env.ALLOW_RENDER_SMTP || "").toLowerCase() === "true";
+  const errors = [];
+  if (gmailApi.ready) {
+    try {
+      return await sendViaGmailApi(mailOptions, label);
+    } catch (err) {
+      errors.push(`gmail-api=${err?.message || err}`);
+    }
+  }
+
+  if (isRender && smtp.host === "smtp.gmail.com" && !allowRenderSmtp) {
+    throw new Error(
+      "Render free web services block outbound SMTP ports 25/465/587. Gmail SMTP cannot connect from this service. Configure Gmail API env vars (GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, GMAIL_FROM) to send over HTTPS, or set ALLOW_RENDER_SMTP=true only if this Render service is paid and SMTP is allowed."
+    );
+  }
+
+  try {
+    const smtpResult = await sendViaSmtp(mailOptions, label);
+    return { ...smtpResult, provider: "smtp" };
+  } catch (err) {
+    errors.push(`smtp=${err?.message || err}`);
+  }
+
+  throw new Error(errors.join(" || "));
+};
+
 const getMailConfigState = () => {
   const smtpHost = String(process.env.SMTP_HOST || "smtp.gmail.com").trim();
   const smtpPort = String(process.env.SMTP_PORT || "").trim();
   const smtpUser = String(process.env.SMTP_USER || "").trim();
   const smtpPass = String(process.env.SMTP_PASS || "").replace(/\s+/g, "");
+  const gmailApi = getGmailApiConfig();
   return {
     smtpReady: Boolean(smtpHost && smtpUser && smtpPass),
     hasSmtpHost: Boolean(smtpHost),
     hasSmtpPort: Boolean(smtpPort),
     hasSmtpUser: Boolean(smtpUser),
-    hasSmtpPass: Boolean(smtpPass)
+    hasSmtpPass: Boolean(smtpPass),
+    gmailApiReady: gmailApi.ready,
+    hasGmailClientId: Boolean(gmailApi.clientId),
+    hasGmailClientSecret: Boolean(gmailApi.clientSecret),
+    hasGmailRefreshToken: Boolean(gmailApi.refreshToken),
+    hasGmailFrom: Boolean(gmailApi.from),
+    isRender: String(process.env.RENDER || "").toLowerCase() === "true",
+    allowRenderSmtp: String(process.env.ALLOW_RENDER_SMTP || "").toLowerCase() === "true"
   };
 };
 
@@ -643,6 +770,34 @@ app.put("/api/admin/profile", async (req, res) => {
   }
 });
 
+app.get("/api/admin/mail-debug", async (_req, res) => {
+  const smtp = getSmtpConfig();
+  const gmailApi = getGmailApiConfig();
+  let smtpIpv4 = [];
+  let smtpDnsError = "";
+  try {
+    smtpIpv4 = await dns.promises.resolve4(smtp.host);
+  } catch (err) {
+    smtpDnsError = err?.message || String(err);
+  }
+
+  res.json({
+    ok: true,
+    providerOrder: gmailApi.ready ? ["gmail-api", "smtp"] : ["smtp"],
+    config: getMailConfigState(),
+    smtp: {
+      host: smtp.host,
+      port: smtp.port,
+      secure: smtp.secure,
+      ipv4Count: smtpIpv4.length,
+      sampleIpv4: smtpIpv4.slice(0, 3),
+      dnsError: smtpDnsError || null
+    },
+    note:
+      "If SMTP times out on Render, it is a network path/port issue. Configure Gmail API env vars to send over HTTPS instead."
+  });
+});
+
 app.post("/api/contact", async (req, res) => {
   const { name, email, subject, message } = req.body || {};
   const cleanName = String(name || "").trim();
@@ -928,13 +1083,13 @@ app.post("/api/contact", async (req, res) => {
         
       };
 
-      const ownerResult = await sendViaSmtp(notificationMailOptions, "owner email").then(
+      const ownerResult = await sendMailReliable(notificationMailOptions, "owner email").then(
         (value) => ({ status: "fulfilled", value }),
         (reason) => ({ status: "rejected", reason })
       );
 
       const visitorResult = ownerResult.status === "fulfilled"
-        ? await sendViaSmtp(autoReplyMailOptions, "visitor email").then(
+        ? await sendMailReliable(autoReplyMailOptions, "visitor email").then(
             (value) => ({ status: "fulfilled", value }),
             (reason) => ({ status: "rejected", reason })
           )
