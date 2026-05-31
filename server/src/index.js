@@ -28,6 +28,10 @@ const getTransporter = () => {
 
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT || 465);
+  const secure =
+    String(process.env.SMTP_SECURE || (port === 465 ? "true" : "false")).toLowerCase() === "true";
 
   if (!user || !pass) {
     console.log("⚠️ SMTP_USER or SMTP_PASS is missing in .env. Email notifications are disabled.");
@@ -35,9 +39,9 @@ const getTransporter = () => {
   }
 
   cachedTransporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    host,
+    port,
+    secure,
     pool: true,
     maxConnections: 5,
     maxMessages: 100,
