@@ -1,15 +1,26 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY || "";
+const ADMIN_TOKEN_KEY = "portfolio_admin_token";
+
+export const getAdminToken = () => "";
+export const setAdminToken = () => {};
+export const clearAdminToken = () => localStorage.removeItem(ADMIN_TOKEN_KEY);
 
 export async function api(path, options = {}) {
-  const authHeaders = path.startsWith("/admin") && ADMIN_API_KEY ? { "x-admin-key": ADMIN_API_KEY } : {};
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...authHeaders, ...(options.headers || {}) },
-    ...options
-  });
+  let res;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      ...options
+    });
+  } catch {
+    throw new Error("Cannot connect to server. Please ensure backend is running on port 5000.");
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || "Request failed");
+    const err = new Error(data.error || "Request failed");
+    err.status = res.status;
+    throw err;
   }
   return data;
 }

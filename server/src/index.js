@@ -3,6 +3,8 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import morgan from "morgan";
+import jwt from "jsonwebtoken";
+import { timingSafeEqual } from "node:crypto";
 
 import Profile from "./models/Profile.js";
 import Message from "./models/Message.js";
@@ -89,7 +91,12 @@ const getEmailSocialIconUrl = (iconName) => {
 const PORT = Number(process.env.PORT || 5000);
 const MONGO_URI = process.env.MONGO_URI || "";
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY || "";
+const FRONTEND_ORIGINS = String(process.env.FRONTEND_ORIGINS || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || "";
 
 const escapeHtml = (value) =>
   String(value || "")
@@ -113,18 +120,91 @@ const isValidUrl = (value) => {
   }
 };
 
-const requireAdminAuth = (req, res, next) => {
-  if (!ADMIN_API_KEY) {
-    return res.status(503).json({ ok: false, error: "Admin auth is not configured on server" });
+const normalizeUrlLike = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw || raw === "#") return "#";
+  if (raw.startsWith("mailto:")) return raw;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^[\w.-]+\.[a-z]{2,}([/:?#].*)?$/i.test(raw)) return `https://${raw}`;
+  if (/^[^\s]+$/.test(raw) && !raw.startsWith("/") && !raw.startsWith("./") && !raw.startsWith("../")) {
+    return `https://${raw}`;
   }
-  const key = req.header("x-admin-key");
-  if (!key || key !== ADMIN_API_KEY) {
-    return res.status(401).json({ ok: false, error: "Unauthorized admin request" });
-  }
-  return next();
+  return raw;
 };
 
-const validateProfilePayload = (payload) => {
+const toPublicProfile = (profile, apiBase = "") => {
+  if (!profile) return profile;
+  const safe = { ...profile };
+  safe.socials = Array.isArray(profile.socials)
+    ? profile.socials.map((s, i) => {
+        const raw = String(s?.url || "");
+        const display = raw.replace(/^https?:\/\/(www\.)?/, "").replace(/^mailto:/, "");
+        return {
+          ...s,
+          url: `${apiBase}/api/out/social/${i}`,
+          display
+        };
+      })
+    : [];
+  safe.projects = Array.isArray(profile.projects)
+    ? profile.projects.map((p, i) => ({
+        ...p,
+        link: p?.link && p.link !== "#" ? `${apiBase}/api/out/project/${i}/link` : "#",
+        github: p?.github && p.github !== "#" ? `${apiBase}/api/out/project/${i}/github` : ""
+      }))
+    : [];
+  return safe;
+};
+
+const safeEqualString = (a, b) => {
+  const aBuf = Buffer.from(String(a || ""), "utf8");
+  const bBuf = Buffer.from(String(b || ""), "utf8");
+  if (aBuf.length !== bBuf.length) return false;
+  return timingSafeEqual(aBuf, bBuf);
+};
+
+const issueAdminToken = () =>
+  jwt.sign({ role: "admin" }, ADMIN_JWT_SECRET, {
+    expiresIn: "12h",
+    issuer: "portfolio-mern-api",
+    audience: "portfolio-mern-admin"
+  });
+
+const parseCookieValue = (cookieHeader, key) => {
+  const header = String(cookieHeader || "");
+  const items = header.split(";").map((p) => p.trim());
+  for (const item of items) {
+    if (!item.startsWith(`${key}=`)) continue;
+    return decodeURIComponent(item.slice(key.length + 1));
+  }
+  return "";
+};
+
+const requireAdminAuth = (req, res, next) => {
+  if (req.path === "/login" || req.path === "/logout") return next();
+  if (!ADMIN_PASSWORD || !ADMIN_JWT_SECRET) {
+    return res.status(503).json({ ok: false, error: "Admin auth is not configured on server" });
+  }
+  const auth = req.header("authorization") || "";
+  const bearerToken = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const cookieToken = parseCookieValue(req.headers.cookie, "admin_token");
+  const token = bearerToken || cookieToken;
+  if (!token) {
+    return res.status(401).json({ ok: false, error: "Unauthorized admin request" });
+  }
+  try {
+    jwt.verify(token, ADMIN_JWT_SECRET, {
+      issuer: "portfolio-mern-api",
+      audience: "portfolio-mern-admin"
+    });
+    return next();
+  } catch {
+    return res.status(401).json({ ok: false, error: "Invalid or expired admin token" });
+  }
+};
+
+const validateProfilePayload = (payload, options = {}) => {
+  const { validateProjects = true, validateSocials = true } = options;
   const errors = [];
   const out = {};
   const name = String(payload?.name || "").trim();
@@ -159,8 +239,8 @@ const validateProfilePayload = (payload) => {
         .map((p) => ({
           title: String(p?.title || "").trim(),
           description: String(p?.description || "").trim(),
-          link: String(p?.link || "#").trim(),
-          github: String(p?.github || "").trim()
+          link: normalizeUrlLike(String(p?.link || "").trim()),
+          github: normalizeUrlLike(String(p?.github || "").trim())
         }))
         .filter((p) => p.title && p.description)
     : [];
@@ -180,10 +260,17 @@ const validateProfilePayload = (payload) => {
         .filter((s) => s.platform && s.url)
     : [];
 
-  if (out.projects.some((p) => !isValidUrl(p.link) || (p.github && !isValidUrl(p.github)))) {
+  if (
+    validateProjects &&
+    out.projects.some(
+      (p) =>
+        (p.link && p.link !== "#" && !isValidUrl(p.link)) ||
+        (p.github && p.github !== "#" && !isValidUrl(p.github))
+    )
+  ) {
     errors.push("Project links must be valid URLs");
   }
-  if (out.socials.some((s) => !isValidUrl(s.url))) {
+  if (validateSocials && out.socials.some((s) => !isValidUrl(s.url))) {
     errors.push("Social links must be valid URLs");
   }
 
@@ -196,10 +283,68 @@ const validateProfilePayload = (payload) => {
   return { errors, out };
 };
 
-app.use(cors({ origin: FRONTEND_ORIGIN }));
+const allowedOrigins = Array.from(
+  new Set([
+    FRONTEND_ORIGIN,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    ...FRONTEND_ORIGINS
+  ])
+);
+
+app.use(
+  cors({
+    credentials: true,
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("CORS origin not allowed"));
+    }
+  })
+);
 app.use(express.json({ limit: "4mb" }));
 app.use(morgan("dev"));
+
+// Basic security headers to reduce embedding/sniffing/data leakage
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'; object-src 'none'");
+  next();
+});
 app.use("/api/admin", requireAdminAuth);
+
+app.post("/api/admin/login", (req, res) => {
+  if (!ADMIN_PASSWORD || !ADMIN_JWT_SECRET) {
+    return res.status(503).json({ ok: false, error: "Admin auth is not configured on server" });
+  }
+  const password = String(req.body?.password || "");
+  if (!safeEqualString(password, ADMIN_PASSWORD)) {
+    return res.status(401).json({ ok: false, error: "Invalid admin credentials" });
+  }
+  const token = issueAdminToken();
+  const isProd = process.env.NODE_ENV === "production";
+  res.setHeader(
+    "Set-Cookie",
+    `admin_token=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200${
+      isProd ? "; Secure" : ""
+    }`
+  );
+  return res.json({ ok: true });
+});
+
+app.post("/api/admin/logout", (_req, res) => {
+  const isProd = process.env.NODE_ENV === "production";
+  res.setHeader(
+    "Set-Cookie",
+    `admin_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${isProd ? "; Secure" : ""}`
+  );
+  return res.json({ ok: true });
+});
 
 const ensureProfile = async () => {
   const existing = await Profile.findOne({ slug: defaultProfile.slug });
@@ -231,35 +376,120 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "portfolio-mern-api" });
 });
 
-app.get("/api/profile", async (_req, res) => {
+app.get("/api/favicon", async (_req, res) => {
   try {
     await ensureProfile();
     const profile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
+    const raw = String(profile?.profile_image_data || "").trim();
+
+    if (raw.startsWith("data:image/")) {
+      const m = raw.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/);
+      if (m) {
+        const mime = m[1];
+        const bytes = Buffer.from(m[2], "base64");
+        res.set("Content-Type", mime);
+        res.set("Cache-Control", "no-store");
+        return res.send(bytes);
+      }
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+      try {
+        const r = await fetch(raw);
+        if (r.ok) {
+          const arr = await r.arrayBuffer();
+          const contentType = r.headers.get("content-type") || "image/png";
+          res.set("Content-Type", contentType);
+          res.set("Cache-Control", "no-store");
+          return res.send(Buffer.from(arr));
+        }
+      } catch {
+        // fallback to generated icon
+      }
+    }
+
+    const letter = String(profile?.name || "A").slice(0, 1).toUpperCase();
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#59d6b4"/><text x="50" y="65" font-family="Outfit, sans-serif" font-size="50" font-weight="bold" fill="#12120f" text-anchor="middle">${escapeHtml(
+      letter
+    )}</text></svg>`;
+    res.set("Content-Type", "image/svg+xml");
+    res.set("Cache-Control", "no-store");
+    return res.send(svg);
+  } catch {
+    return res.status(500).end();
+  }
+});
+
+app.get("/api/profile", async (req, res) => {
+  try {
+    await ensureProfile();
+    const profile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
+    const apiBase = `${req.protocol}://${req.get("host")}`;
     res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
-    res.json(profile);
+    res.json(toPublicProfile(profile, apiBase));
   } catch (err) {
     console.error("Error in /api/profile:", err);
     res.status(500).json({ ok: false, error: "Could not load profile: " + err.message });
   }
 });
 
+app.get("/api/out/social/:index", async (req, res) => {
+  try {
+    await ensureProfile();
+    const profile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
+    const idx = Number(req.params.index);
+    const target = String(profile?.socials?.[idx]?.url || "").trim();
+    if (!target || !isValidUrl(target)) return res.status(404).send("Invalid link");
+    return res.redirect(302, target);
+  } catch {
+    return res.status(500).send("Could not open link");
+  }
+});
+
+app.get("/api/out/project/:index/:kind", async (req, res) => {
+  try {
+    await ensureProfile();
+    const profile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
+    const idx = Number(req.params.index);
+    const kind = req.params.kind === "github" ? "github" : "link";
+    const target = String(profile?.projects?.[idx]?.[kind] || "").trim();
+    if (!target || target === "#" || !isValidUrl(target)) return res.status(404).send("Invalid link");
+    return res.redirect(302, target);
+  } catch {
+    return res.status(500).send("Could not open link");
+  }
+});
+
+app.get("/api/admin/profile", async (_req, res) => {
+  try {
+    await ensureProfile();
+    const profile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
+    return res.json(profile);
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: "Could not load admin profile: " + err.message });
+  }
+});
+
 app.put("/api/admin/profile", async (req, res) => {
   try {
     const payload = req.body || {};
-    const { errors, out } = validateProfilePayload(payload);
+    const currentProfile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
+    const mergedPayload = {
+      ...(currentProfile || defaultProfile),
+      ...payload
+    };
+    const { errors, out } = validateProfilePayload(mergedPayload, {
+      validateProjects: Object.prototype.hasOwnProperty.call(payload, "projects"),
+      validateSocials: Object.prototype.hasOwnProperty.call(payload, "socials")
+    });
     if (errors.length > 0) {
       return res.status(400).json({ ok: false, error: errors[0] });
     }
-    let newImageUrl = payload.profile_image_data || "";
-    let newPublicId = "";
+    const hasImageUpdate = Object.prototype.hasOwnProperty.call(payload, "profile_image_data");
+    let newImageUrl = out.profile_image_data || "";
+    let newPublicId = currentProfile?.profile_image_public_id || "";
 
-    // 1. Fetch current profile to check if there is an existing image to delete
-    const currentProfile = await Profile.findOne({ slug: defaultProfile.slug }).lean();
-    if (currentProfile && currentProfile.profile_image_public_id) {
-      newPublicId = currentProfile.profile_image_public_id;
-    }
-
-    if (newImageUrl && newImageUrl.startsWith("data:image")) {
+    if (hasImageUpdate && newImageUrl && newImageUrl.startsWith("data:image")) {
       // User uploaded a new base64 photo!
       // A. Upload new photo to Cloudinary
       const uploadRes = await cloudinary.uploader.upload(newImageUrl, {
@@ -277,7 +507,7 @@ app.put("/api/admin/profile", async (req, res) => {
           console.error("Failed to delete old image from Cloudinary:", destroyErr);
         }
       }
-    } else if (newImageUrl === "") {
+    } else if (hasImageUpdate && newImageUrl === "") {
       // User removed the photo!
       // Delete the old photo from Cloudinary if it exists
       if (currentProfile && currentProfile.profile_image_public_id) {

@@ -1,8 +1,9 @@
-import { NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { api } from "./api";
+import { addListener, removeListener, launch, stop } from "devtools-detector";
+import { api, API_URL, clearAdminToken } from "./api";
 
-const SecureImage = ({ src, className, alt }) => {
+const SecureImage = ({ src, className, alt, watermark = "" }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -20,9 +21,24 @@ const SecureImage = ({ src, className, alt }) => {
 
       ctx.clearRect(0, 0, width, height);
       ctx.drawImage(img, 0, 0, width, height);
+
+      if (watermark) {
+        ctx.save();
+        const mark = `© ${watermark}`;
+        const fontSize = Math.max(14, Math.floor(width / 26));
+        ctx.font = `700 ${fontSize}px Outfit, sans-serif`;
+        ctx.fillStyle = "rgba(255,255,255,0.22)";
+        ctx.strokeStyle = "rgba(0,0,0,0.28)";
+        ctx.lineWidth = 2;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        ctx.strokeText(mark, width - 18, height - 16);
+        ctx.fillText(mark, width - 18, height - 16);
+        ctx.restore();
+      }
     };
     img.src = src;
-  }, [src]);
+  }, [src, watermark]);
 
   return (
     <canvas
@@ -110,6 +126,93 @@ function ThemeToggle() {
       )}
       <span className="nav-tooltip">{isLight ? "Dark Mode" : "Light Mode"}</span>
     </button>
+  );
+}
+
+function StatusPopup({ toast, onClose }) {
+  if (!toast?.show || !toast?.message) return null;
+  const isError = toast.type === "error";
+  const isInfo = toast.type === "info";
+  return (
+    <div className="status-popup-overlay" role="dialog" aria-modal="true" aria-live="polite">
+      <div className={`status-popup ${isError ? "error" : isInfo ? "info" : "success"}`}>
+        <span className="status-popup-icon" aria-hidden="true">
+          {isInfo ? (
+            <svg viewBox="0 0 24 24" className="status-popup-spinner" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 3a9 9 0 0 1 9 9" />
+            </svg>
+          ) : isError ? "!" : "✓"}
+        </span>
+        <p className="status-popup-text">{toast.message}</p>
+        {isInfo && (
+          <>
+            <span className="status-popup-subtext">Please wait...</span>
+            <span className="status-popup-subtext">Do not close</span>
+            <span className="status-popup-dots" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+          </>
+        )}
+        {!isInfo && (
+          <button type="button" className="status-popup-ok" onClick={onClose}>
+            OK
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function OfflinePage() {
+  const [opening, setOpening] = useState(false);
+
+  const openNetworkSettings = () => {
+    setOpening(true);
+    try {
+      window.location.href = "ms-settings:network-status";
+    } catch {
+      // ignore
+    }
+    setTimeout(() => {
+      try {
+        window.open("ms-settings:network", "_self");
+      } catch {
+        // ignore
+      }
+      setOpening(false);
+    }, 700);
+  };
+
+  return (
+    <div className="offline-wrap">
+      <div className="offline-card">
+        <div className="offline-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M2 8.5A17.5 17.5 0 0 1 12 5c3.9 0 7.5 1.2 10 3.5" />
+            <path d="M5 12a12.6 12.6 0 0 1 14 0" />
+            <path d="M8.5 15.2a7.4 7.4 0 0 1 7 0" />
+            <circle cx="12" cy="19" r="1.5" />
+            <line x1="3" y1="3" x2="21" y2="21" />
+          </svg>
+        </div>
+        <div className="offline-badge">Connection Lost</div>
+        <h1>You Are Not Connected</h1>
+        <p>
+          Your internet connection is currently offline. Please reconnect and come back, we will keep your experience ready.
+        </p>
+        <div className="offline-actions">
+          <button type="button" className="offline-btn-primary" onClick={openNetworkSettings}>
+            {opening ? "Opening Settings..." : "Open Internet Settings"}
+          </button>
+          <button type="button" className="offline-btn-ghost" onClick={() => window.location.reload()}>
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -383,7 +486,9 @@ const getOrbitPosition = (idx, total) => {
 
 
 function Home({ profile }) {
+  const navigate = useNavigate();
   const [status, setStatus] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const [copiedId, setCopiedId] = useState("");
   const [heroImgFailed, setHeroImgFailed] = useState(false);
   const [brandImgFailed, setBrandImgFailed] = useState(false);
@@ -401,6 +506,23 @@ function Home({ profile }) {
   const orbitSocials = socials.filter((s) => s.showInOrbit !== false);
   const contactSocials = socials.filter((s) => s.showInContact !== false);
   const visibleProjects = (profile.projects || []).slice(0, visibleProjectsCount);
+
+  const isValidOutboundUrl = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw || raw === "#") return false;
+    try {
+      const parsed = new URL(raw);
+      return parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "mailto:";
+    } catch {
+      return false;
+    }
+  };
+
+  const guardExternalLink = (url, e) => {
+    if (isValidOutboundUrl(url)) return;
+    e.preventDefault();
+    navigate("/error");
+  };
 
   const handleCopy = (text, id, e) => {
     e.preventDefault();
@@ -429,6 +551,12 @@ function Home({ profile }) {
     }
   };
 
+  useEffect(() => {
+    if (!status) return;
+    const type = /invalid|error|required|failed|unauthorized/i.test(status) ? "error" : "success";
+    setToast({ show: true, message: status, type });
+  }, [status]);
+
   if (!profile) return <p className="loading">Loading portfolio...</p>;
 
   return (
@@ -442,6 +570,7 @@ function Home({ profile }) {
                   src={profile.profile_image_data}
                   className="brand-logo-img"
                   alt={profile.name}
+                  watermark={profile.name}
                 />
                 {/* Transparent Cover to block right-click and inspect target */}
                 <div
@@ -497,6 +626,7 @@ function Home({ profile }) {
               target="_blank"
               rel="noreferrer"
               aria-label={social.platform}
+              onClick={(e) => guardExternalLink(social.url, e)}
             >
               {getSocialIcon(social.icon, "nav-icon")}
               <span className="nav-tooltip">{social.platform}</span>
@@ -535,6 +665,7 @@ function Home({ profile }) {
                   rel="noreferrer"
                   aria-label={social.platform}
                   style={getOrbitPosition(idx, orbitSocials.length)}
+                  onClick={(e) => guardExternalLink(social.url, e)}
                 >
                   {getSocialIcon(social.icon)}
                 </a>
@@ -548,6 +679,7 @@ function Home({ profile }) {
                   <SecureImage
                     src={profile.profile_image_data}
                     alt={profile.name}
+                    watermark={profile.name}
                   />
                   {/* Transparent Cover to block right-click and inspect target */}
                   <div
@@ -624,6 +756,7 @@ function Home({ profile }) {
                         rel="noreferrer"
                         className="project-icon-btn demo-btn"
                         aria-label="Live Demo"
+                        onClick={(e) => guardExternalLink(p.link, e)}
                       >
                         {/* Globe / External link icon */}
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -642,6 +775,7 @@ function Home({ profile }) {
                         rel="noreferrer"
                         className="project-icon-btn github-btn"
                         aria-label="GitHub"
+                        onClick={(e) => guardExternalLink(p.github, e)}
                       >
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                           <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
@@ -796,13 +930,14 @@ function Home({ profile }) {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={social.platform}
+                    onClick={(e) => guardExternalLink(social.url, e)}
                   >
                     <div className="social-icon-wrapper">
                       {getSocialIcon(social.icon, "social-icon")}
                     </div>
                     <div className="social-details">
                       <span>{social.icon === "mail" || social.icon === "email" ? "Email Me Directly" : `Connect on ${social.platform}`}</span>
-                      <strong>{social.url.replace(/^https?:\/\/(www\.)?/, "").replace(/^mailto:/, "")}</strong>
+                      <strong>{social.display || social.url.replace(/^https?:\/\/(www\.)?/, "").replace(/^mailto:/, "")}</strong>
                     </div>
                     <button
                       className="copy-card-btn"
@@ -840,11 +975,11 @@ function Home({ profile }) {
                   </svg>
                 </button>
               </form>
-              {status && <p className="status">{status}</p>}
             </div>
           </div>
         </section>
       </main>
+      <StatusPopup toast={toast} onClose={() => setToast((prev) => ({ ...prev, show: false }))} />
     </div>
   );
 }
@@ -852,6 +987,10 @@ function Home({ profile }) {
 function Admin({ profile, setProfile }) {
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [brandImgFailed, setBrandImgFailed] = useState(false);
   const [previewImgFailed, setPreviewImgFailed] = useState(false);
 
@@ -969,6 +1108,16 @@ function Admin({ profile, setProfile }) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imgSize, setImgSize] = useState({ w: 250, h: 250 });
 
+  const pushStatus = (message) => {
+    const msg = String(message || "");
+    setStatus(`${msg} ${Date.now()}`);
+    const type = /invalid|error|required|failed|unauthorized|too large/i.test(msg) ? "error" : "success";
+    setToast({ show: true, message: msg, type });
+  };
+  const pushSaving = (message = "Saving changes...") => {
+    setToast({ show: true, message, type: "info" });
+  };
+
   useEffect(() => {
     setBrandImgFailed(false);
     setPreviewImgFailed(false);
@@ -990,25 +1139,66 @@ function Admin({ profile, setProfile }) {
 
   const load = async () => {
     try {
-      const p = await api("/profile?t=" + Date.now());
+      const p = await api("/admin/profile?t=" + Date.now());
       setProfile(p);
+      const m = await api("/admin/messages?t=" + Date.now());
+      setMessages(m.messages || []);
+      setNeedsAuth(false);
+      setStatus("");
     } catch (e) {
-      setStatus(e.message);
+      if (e.status === 401) {
+        setNeedsAuth(true);
+        pushStatus("Admin login required.");
+        return;
+      }
+      pushStatus(e.message);
     }
   };
 
   useEffect(() => {
-    api("/admin/messages?t=" + Date.now())
-      .then((m) => setMessages(m.messages || []))
-      .catch((e) => setStatus(e.message));
+    load();
   }, []);
+
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    const password = adminPassword.trim();
+    if (!password) {
+      pushStatus("Enter admin password.");
+      return;
+    }
+    setIsSigningIn(true);
+    try {
+      await api("/admin/login", {
+        method: "POST",
+        body: JSON.stringify({ password })
+      });
+      setAdminPassword("");
+      await load();
+      pushStatus("Admin login successful.");
+    } catch (err) {
+      pushStatus(err.message || "Admin login failed.");
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    api("/admin/logout", { method: "POST" })
+      .catch(() => null)
+      .finally(() => {
+        clearAdminToken();
+        setNeedsAuth(true);
+        setMessages([]);
+        pushStatus("Logged out from admin.");
+      });
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      setStatus("Image too large. Max size is 10MB.");
+      pushStatus("Image too large. Max size is 10MB.");
       return;
     }
 
@@ -1097,17 +1287,16 @@ function Admin({ profile, setProfile }) {
       email: f.get("email"),
       about: f.get("about"),
       skills: localSkills,
-      socials: localSocials.filter((s) => s.platform.trim() && s.url.trim()),
       stats: profile.stats,
-      projects: localProjects.filter((p) => p.title.trim()),
       profile_image_data: profile.profile_image_data || ""
     };
     try {
+      pushSaving("Saving profile...");
       await api("/admin/profile", { method: "PUT", body: JSON.stringify(payload) });
-      setStatus("Profile updated.");
+      pushStatus("Profile updated.");
       await load();
     } catch (e2) {
-      setStatus(e2.message);
+      pushStatus(e2.message);
     }
   };
 
@@ -1116,11 +1305,53 @@ function Admin({ profile, setProfile }) {
       await api(`/admin/messages/${id}`, { method: "DELETE" });
       setMessages((prev) => prev.filter((m) => m._id !== id));
     } catch (e) {
-      setStatus(e.message);
+      pushStatus(e.message);
     }
   };
 
-  if (!profile) return <p className="loading">{status || "Loading admin..."}</p>;
+  if (!profile) return <p className="loading">Loading admin...</p>;
+  if (needsAuth) {
+    return (
+      <div className="page admin-page">
+        <header className="topbar">
+          <a className="brand" href="/admin">
+            <span>{profile.name?.slice(0, 1) || "A"}</span>
+            Admin Access
+          </a>
+          <nav>
+            <NavLink to="/" className="nav-item" aria-label="Back">
+              <svg viewBox="0 0 24 24" className="nav-icon" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+              <span className="nav-tooltip">Back</span>
+            </NavLink>
+            <ThemeToggle />
+          </nav>
+        </header>
+        <section className="panel">
+          <div className="section-heading">
+            <span>Secure Login</span>
+            <h3>Admin Sign In</h3>
+          </div>
+          <form className="form" onSubmit={handleAdminLogin}>
+            <input
+              type="password"
+              placeholder="Enter admin password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+            <button type="submit" disabled={isSigningIn}>
+              {isSigningIn ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+          <StatusPopup toast={toast} onClose={() => setToast((prev) => ({ ...prev, show: false }))} />
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="page admin-page">
@@ -1148,6 +1379,14 @@ function Admin({ profile, setProfile }) {
             </svg>
             <span className="nav-tooltip">Back</span>
           </NavLink>
+          <button className="nav-item" type="button" onClick={handleAdminLogout} aria-label="Logout">
+            <svg viewBox="0 0 24 24" className="nav-icon" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span className="nav-tooltip">Logout</span>
+          </button>
           <ThemeToggle />
         </nav>
       </header>
@@ -1340,7 +1579,6 @@ function Admin({ profile, setProfile }) {
 
           <button type="submit">Save Changes</button>
         </form>
-        {status && <p className="status">{status}</p>}
       </section>
 
       {/* ===== Projects Manager Section ===== */}
@@ -1548,15 +1786,15 @@ function Admin({ profile, setProfile }) {
             className="btn-save-projects"
             onClick={async () => {
               try {
+                pushSaving("Saving projects...");
                 const payload = {
-                  ...profile,
                   projects: localProjects.filter((p) => p.title.trim())
                 };
                 await api("/admin/profile", { method: "PUT", body: JSON.stringify(payload) });
-                setStatus("Projects saved!");
+                pushStatus("Projects saved!");
                 await load();
               } catch (err) {
-                setStatus(err.message);
+                pushStatus(err.message);
               }
             }}
           >
@@ -1564,7 +1802,6 @@ function Admin({ profile, setProfile }) {
             Save Projects
           </button>
         </div>
-        {status && <p className="status">{status}</p>}
       </section>
 
       {/* ===== Social Links Manager Section ===== */}
@@ -1875,15 +2112,15 @@ function Admin({ profile, setProfile }) {
             className="btn-save-projects"
             onClick={async () => {
               try {
+                pushSaving("Saving social links...");
                 const payload = {
-                  ...profile,
                   socials: localSocials.filter((s) => s.platform.trim() && s.url.trim())
                 };
                 await api("/admin/profile", { method: "PUT", body: JSON.stringify(payload) });
-                setStatus("Social links saved!");
+                pushStatus("Social links saved!");
                 await load();
               } catch (err) {
-                setStatus(err.message);
+                pushStatus(err.message);
               }
             }}
           >
@@ -1891,8 +2128,9 @@ function Admin({ profile, setProfile }) {
             Save Social Links
           </button>
         </div>
-        {status && <p className="status">{status}</p>}
       </section>
+
+      <StatusPopup toast={toast} onClose={() => setToast((prev) => ({ ...prev, show: false }))} />
 
       <section className="panel">
         <div className="section-heading">
@@ -2452,10 +2690,188 @@ function NotFound() {
   );
 }
 
+function DevtoolsWarning() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+        background: "radial-gradient(circle at center, #181816 0%, #0a0a09 100%)",
+        color: "#f6f1e8",
+        fontFamily: "Outfit, sans-serif",
+        textAlign: "center",
+        padding: "20px",
+        margin: 0,
+        overflow: "hidden",
+        position: "relative",
+        userSelect: "none"
+      }}
+    >
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes glow-pulse {
+          0% { box-shadow: 0 0 20px rgba(234, 67, 53, 0.1), inset 0 0 20px rgba(234, 67, 53, 0.05); }
+          50% { box-shadow: 0 0 40px rgba(234, 67, 53, 0.3), inset 0 0 30px rgba(234, 67, 53, 0.1); }
+          100% { box-shadow: 0 0 20px rgba(234, 67, 53, 0.1), inset 0 0 20px rgba(234, 67, 53, 0.05); }
+        }
+        @keyframes floating {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0px); }
+        }
+        @keyframes border-glow {
+          0% { border-color: rgba(234, 67, 53, 0.05); }
+          50% { border-color: rgba(234, 67, 53, 0.25); }
+          100% { border-color: rgba(234, 67, 53, 0.05); }
+        }
+      `}} />
+
+      <div
+        style={{
+          position: "absolute",
+          width: "350px",
+          height: "350px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(234, 67, 53, 0.05) 0%, rgba(0, 0, 0, 0) 70%)",
+          top: "10%",
+          left: "25%",
+          filter: "blur(40px)",
+          pointerEvents: "none",
+          zIndex: 1
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          width: "400px",
+          height: "400px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(89, 214, 180, 0.03) 0%, rgba(0, 0, 0, 0) 70%)",
+          bottom: "10%",
+          right: "20%",
+          filter: "blur(40px)",
+          pointerEvents: "none",
+          zIndex: 1
+        }}
+      />
+
+      <div
+        style={{
+          padding: "50px 40px",
+          borderRadius: "24px",
+          background: "rgba(255, 255, 255, 0.01)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border: "1px solid rgba(255, 255, 255, 0.03)",
+          boxShadow: "0 50px 100px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+          maxWidth: "520px",
+          zIndex: 2,
+          animation: "floating 6s ease-in-out infinite, border-glow 4s ease-in-out infinite",
+          position: "relative"
+        }}
+      >
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "6px 14px",
+            borderRadius: "100px",
+            background: "rgba(234, 67, 53, 0.08)",
+            border: "1px solid rgba(234, 67, 53, 0.15)",
+            color: "#ea4335",
+            fontSize: "0.75rem",
+            fontWeight: "700",
+            letterSpacing: "1.5px",
+            textTransform: "uppercase",
+            marginBottom: "24px"
+          }}
+        >
+          <span
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              backgroundColor: "#ea4335",
+              boxShadow: "0 0 10px #ea4335"
+            }}
+          />
+          Shield Active
+        </div>
+
+        <div
+          style={{
+            width: "90px",
+            height: "90px",
+            borderRadius: "50%",
+            backgroundColor: "rgba(18, 18, 15, 0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            margin: "0 auto 28px auto",
+            fontSize: "2.8rem",
+            border: "1px solid rgba(255, 255, 255, 0.05)",
+            animation: "glow-pulse 4s ease-in-out infinite"
+          }}
+        >
+          🔒
+        </div>
+
+        <h1
+          style={{
+            color: "#fff",
+            fontSize: "2.25rem",
+            margin: "0 0 16px 0",
+            fontWeight: "900",
+            letterSpacing: "-1px",
+            lineHeight: "1.2"
+          }}
+        >
+          System Secured
+        </h1>
+        
+        <p
+          style={{
+            fontSize: "1rem",
+            color: "#a69e90",
+            lineHeight: "1.6",
+            margin: "0 0 28px 0",
+            fontWeight: "400"
+          }}
+        >
+          Developer tools are disabled on this portfolio to safeguard copyrighted assets, custom codebase, and intellectual properties.
+        </p>
+
+        <div
+          style={{
+            padding: "16px 20px",
+            borderRadius: "12px",
+            background: "rgba(234, 67, 53, 0.03)",
+            border: "1px solid rgba(234, 67, 53, 0.08)",
+            color: "#ea4335",
+            fontSize: "0.85rem",
+            fontWeight: "600",
+            lineHeight: "1.4"
+          }}
+        >
+          ⚠️ To proceed, please close your Developer Tools / Inspector panel and reload the page!
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState("");
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isLocked, setIsLocked] = useState(() => {
+    return sessionStorage.getItem("portfolio_locked") === "true";
+  });
   const location = useLocation();
+  const navigate = useNavigate();
   const is404 = location.pathname !== "/" && location.pathname !== "/admin";
 
   // 1. Load Profile at parent level on load (speeds up transitions & centralizes state)
@@ -2468,6 +2884,17 @@ export default function App() {
       });
   }, []);
 
+  useEffect(() => {
+    const goOnline = () => setIsOffline(false);
+    const goOffline = () => setIsOffline(true);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
+
   // 2. Tab Security Shield (title & favicon override)
   useEffect(() => {
     let link = document.querySelector("link[rel~='icon']");
@@ -2476,28 +2903,92 @@ export default function App() {
       link.rel = "icon";
       document.head.appendChild(link);
     }
-    if (is404) {
+    if (isLocked) {
+      link.href =
+        "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23110f10'/><text x='50' y='66' font-size='52' text-anchor='middle'>🔒</text></svg>";
+      document.title = "🔒 Access Restrained | Portfolio Secured";
+    } else if (is404) {
       // Set 404 warning favicon and page title
       link.href = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%2311110f"/><text x="50" y="68" font-size="55" text-anchor="middle">⚠️</text></svg>`;
       document.title = "⚠️ 404 | Page Not Found";
     } else if (profile) {
       document.title = profile.name ? `${profile.name} | Portfolio` : "Portfolio";
-      const imgData = profile.profile_image_data;
-      if (imgData) {
-        link.href = imgData;
-      } else {
-        const letter = profile.name?.slice(0, 1) || "A";
-        link.href = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2359d6b4"/><text x="50" y="65" font-family="Outfit, sans-serif" font-size="50" font-weight="bold" fill="%2312120f" text-anchor="middle">${letter}</text></svg>`;
-      }
+      const apiBase = API_URL.replace(/\/api$/, "");
+      link.href = `${apiBase}/api/favicon?t=${Date.now()}`;
     }
-  }, [profile, is404]);
+  }, [profile, is404, isLocked]);
 
+  // 3. Global Capturing Context Blockers & DevTools Detector
+  useEffect(() => {
+    // A. Context Menu Block (capture phase!)
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+    window.addEventListener("contextmenu", handleContextMenu, true);
+
+    // B. Hotkeys Block (capture phase!)
+    const handleKeyDown = (e) => {
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && e.key === "I") ||
+        (e.ctrlKey && e.shiftKey && e.key === "J") ||
+        (e.ctrlKey && e.shiftKey && e.key === "C") ||
+        (e.ctrlKey && (e.key === "u" || e.key === "U")) ||
+        (e.ctrlKey && (e.key === "s" || e.key === "S"))
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+
+    // C. DevTools Detector using mature devtools-detector package
+    const handleDevToolsChange = (isOpen) => {
+      if (isOpen) {
+        setIsLocked(true);
+        sessionStorage.setItem("portfolio_locked", "true");
+      } else {
+        setIsLocked(false);
+        sessionStorage.removeItem("portfolio_locked");
+      }
+    };
+
+    addListener(handleDevToolsChange);
+    launch();
+
+    // D. Global select/drag CSS injection
+    const styleEl = document.createElement("style");
+    styleEl.innerHTML = `
+      * {
+        user-select: none !important;
+        -webkit-user-drag: none !important;
+      }
+      input, textarea, button {
+        user-select: auto !important;
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    return () => {
+      window.removeEventListener("contextmenu", handleContextMenu, true);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      removeListener(handleDevToolsChange);
+      stop();
+      if (document.head.contains(styleEl)) {
+        document.head.removeChild(styleEl);
+      }
+    };
+  }, []);
+
+  if (isOffline) return <OfflinePage />;
+  if (isLocked) return <DevtoolsWarning />;
   if (!profile) return <p className="loading">{status || "Loading portfolio..."}</p>;
 
   return (
     <Routes>
       <Route path="/" element={<Home profile={profile} />} />
       <Route path="/admin" element={<Admin profile={profile} setProfile={setProfile} />} />
+      <Route path="/error" element={<NotFound />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
