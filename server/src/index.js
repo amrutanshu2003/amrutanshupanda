@@ -757,7 +757,7 @@ app.get("/api/admin/mail-debug", async (_req, res) => {
   });
 });
 
-app.post("/api/admin/mail-test", async (_req, res) => {
+const runAdminMailTest = async (_req, res) => {
   const to = process.env.CONTACT_TO || process.env.SMTP_USER;
   if (!to) {
     return res.status(500).json({ ok: false, error: "CONTACT_TO or SMTP_USER is missing" });
@@ -790,7 +790,10 @@ app.post("/api/admin/mail-test", async (_req, res) => {
       detail: String(err?.message || err)
     });
   }
-});
+};
+
+app.get("/api/admin/mail-test", runAdminMailTest);
+app.post("/api/admin/mail-test", runAdminMailTest);
 
 app.post("/api/contact", async (req, res) => {
   const { name, email, subject, message } = req.body || {};
