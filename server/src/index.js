@@ -412,6 +412,18 @@ app.get("/", (_req, res) => {
   });
 });
 
+app.get("/contact", (_req, res) => {
+  const target = FRONTEND_ORIGIN ? `${FRONTEND_ORIGIN.replace(/\/$/, "")}/#contact` : "/api";
+  return res.redirect(302, target);
+});
+
+app.get("/api/contact", (_req, res) => {
+  return res.json({
+    ok: true,
+    message: "Use POST /api/contact to send messages from the contact form."
+  });
+});
+
 app.get("/api/favicon", async (_req, res) => {
   try {
     res.set("Cross-Origin-Resource-Policy", "cross-origin");
