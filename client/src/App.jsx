@@ -1,7 +1,6 @@
 import { NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { api } from "./api";
-import { addListener, removeListener, launch, stop } from "devtools-detector";
 
 const SecureImage = ({ src, className, alt }) => {
   const canvasRef = useRef(null);
@@ -210,21 +209,168 @@ const getSocialIcon = (iconName, className = "") => {
   }
 };
 
+const getSkillIcon = (skillName, className = "") => {
+  const skill = String(skillName || "").toLowerCase().trim();
+  
+  if (skill.includes("python")) {
+    return (
+      <svg viewBox="0 0 128 128" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#3776ab" d="M63.996 1.996c-4.223.02-8.254.379-11.803 1.008-10.45 1.846-12.346 5.71-12.346 12.837v9.411H64.54v3.137H30.579c-7.176 0-13.46 4.313-15.426 12.521-2.268 9.405-2.368 15.275 0 25.096 1.755 7.311 5.947 12.519 13.124 12.519h8.491v-9.52c0-8.151 7.051-15.34 15.426-15.34H76.86c6.866 0 12.346-5.654 12.346-12.548V15.841c0-6.693-5.646-11.72-12.346-12.837-4.244-.706-8.645-1.027-12.866-1.008zM50.64 9.565c2.55 0 4.634 2.117 4.634 4.721 0 2.593-2.083 4.69-4.634 4.69-2.56 0-4.633-2.097-4.633-4.69-.001-2.604 2.073-4.721 4.633-4.721z"/>
+        <path fill="#ffd343" d="M64.004 126.004c4.223-.02 8.254-.379 11.803-1.008 10.45-1.846 12.346-5.71 12.346-12.837v-9.411H53.46v-3.137h33.961c7.176 0 13.46-4.313 15.426-12.521 2.268-9.405 2.368-15.275 0-25.096-1.755-7.311-5.947-12.519-13.124-12.519h-8.491v9.52c0 8.151-7.051 15.34-15.426 15.34H51.14c-6.866 0-12.346 5.654-12.346 12.548v23.515c0 6.693 5.646 11.72 12.346 12.837 4.244.706 8.645 1.027 12.866 1.008zm13.356-7.569c-2.55 0-4.634-2.117-4.634-4.721 0-2.593 2.083-4.69 4.634-4.69 2.56 0 4.633 2.097 4.633 4.69.001 2.604-2.073 4.721-4.633 4.721z"/>
+        <circle cx="50.64" cy="14.28" r="4.5" fill="#ffffff" />
+        <circle cx="77.36" cy="113.72" r="4.5" fill="#ffffff" />
+      </svg>
+    );
+  }
+  
+  if (skill.includes("javascript") || skill === "js") {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <rect width="24" height="24" rx="3" fill="#F7DF1E"/>
+        <path fill="#000000" d="M22.034 18.276c-.175-1.095-.888-2.015-3.003-2.873-.736-.345-1.554-.585-1.797-1.14-.091-.33-.105-.51-.046-.705.15-.646.915-.84 1.515-.66.39.12.75.42.976.9 1.034-.676 1.034-.676 1.755-1.125-.27-.42-.404-.601-.586-.78-.63-.705-1.469-1.065-2.834-1.034l-.705.089c-.676.165-1.32.525-1.71 1.005-1.14 1.291-.811 3.541.569 4.471 1.365 1.02 3.361 1.244 3.616 2.205.24 1.17-.87 1.545-1.966 1.41-.811-.18-1.26-.586-1.755-1.336l-1.83 1.051c.21.48.45.689.81 1.109 1.74 1.756 6.09 1.666 6.871-1.004.029-.09.24-.705.074-1.65l.046.067zm-8.983-7.245h-2.248c0 1.938-.009 3.864-.009 5.805 0 1.232.063 2.363-.138 2.711-.33.689-1.18.601-1.566.48-.396-.196-.597-.466-.83-.855-.063-.105-.11-.196-.127-.196l-1.825 1.125c.305.63.75 1.172 1.324 1.517.855.51 2.004.675 3.207.405.783-.226 1.458-.691 1.811-1.411.51-.93.402-2.07.397-3.346.012-2.054 0-4.109 0-6.179l.004-.056z"/>
+      </svg>
+    );
+  }
+  
+  if (skill.includes("typescript") || skill === "ts") {
+    return (
+      <svg viewBox="0 0 128 128" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#3178C6" d="M1.408 1.408h125.184v125.185H1.408z" />
+        <path fill="#FFF" d="M116.647 101.442h-18.06v-34.407H83.82v-11.89h32.827v46.297zM69.043 55.145H42.756v46.297H30.866V55.145H4.582V43.255h64.461v11.89z" transform="scale(0.85) translate(10, 10)" />
+      </svg>
+    );
+  }
+  
+  if (skill.includes("html")) {
+    return (
+      <svg viewBox="0 0 128 128" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#E44D26" d="M19.037 113.876L9.032 1.661h109.936l-10.016 112.198-45.019 12.48z"/>
+        <path fill="#F16529" d="M64 116.8l36.378-10.086 8.559-95.878H64z"/>
+        <path fill="#EBEBEB" d="M64 52.455H45.788L44.53 38.361H64V24.599H29.489l.33 3.692 3.382 37.927H64zm0 35.743l-.061.017-15.327-4.14-.979-10.99H33.092l1.96 21.974L64 104.227zm0-35.743v13.762H64z"/>
+        <path fill="#FFF" d="M64 52.455V66.22h17.202l-1.626 18.232L64 88.583v15.644l28.918-8.026 3.821-42.746H64zM64 24.599v13.762h33.682l.333-3.711 1.017-10.051H64z"/>
+      </svg>
+    );
+  }
+  
+  if (skill.includes("css")) {
+    return (
+      <svg viewBox="0 0 128 128" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#1572B6" d="M18.814 114.123L8.76 1.352h110.48l-10.064 112.754-45.243 12.543-45.119-12.526z"/><path fill="#33A9DC" d="M64.001 117.062l36.559-10.136 8.601-96.354h-45.16v106.49z"/><path fill="#fff" d="M64.001 51.429h18.302l1.264-14.163H64.001V23.435h34.682l-.332 3.711-3.4 38.114h-30.95V51.429z"/><path fill="#EBEBEB" d="M64.083 87.349l-.061.018-15.403-4.159-.985-11.031H33.752l1.937 21.717 28.331 7.863.063-.018v-14.39z"/><path fill="#fff" d="M81.127 64.675l-1.666 18.522-15.426 4.164v14.39l28.354-7.858.208-2.337 2.406-26.881H81.127z"/><path fill="#EBEBEB" d="M64.048 23.435v13.831H30.64l-.277-3.108-.63-7.012-.33-3.711h34.646zm-.047 27.996v13.831H48.792l-.277-3.108-.631-7.012-.33-3.711h16.447z"/>
+      </svg>
+    );
+  }
+  
+  if (skill.includes("mongo")) {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#13AA52" d="M17.193 9.555c-1.264-5.58-4.252-7.414-4.573-8.115-.28-.394-.53-.954-.735-1.44-.036.495-.055.685-.523 1.184-.723.566-4.438 3.682-4.74 10.02-.282 5.912 4.27 9.435 4.888 9.884l.07.05A73.49 73.49 0 0111.91 24h.481c.114-1.032.284-2.056.51-3.07.417-.296.604-.463.85-.693a11.342 11.342 0 003.639-8.464c.01-.814-.103-1.662-.197-2.218zm-5.336 8.195s0-8.291.275-8.29c.213 0 .49 10.695.49 10.695-.381-.045-.765-1.76-.765-2.405z" />
+      </svg>
+    );
+  }
+  
+  if (skill.includes("flask")) {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="currentColor" d="M10.773 2.878c-.013 1.434.322 4.624.445 5.734l-8.558 3.83c-.56-.959-.98-2.304-1.237-3.38l-.06.027c-.205.09-.406.053-.494-.088l-.011-.018-.82-1.506c-.058-.105-.05-.252.024-.392a.78.78 0 0 1 .358-.331l9.824-4.207c.146-.064.299-.063.4.004.106.062.127.128.13.327Zm.68 7c.523 1.97.675 2.412.832 2.818l-7.263 3.7a19.35 19.35 0 0 1-1.81-2.83l8.24-3.689Zm12.432 8.786h.003c.283.402-.047.657-.153.698l-.947.37c.037.125.035.319-.217.414l-.736.287c-.229.09-.398-.059-.42-.2l-.025-.125c-4.427 1.784-7.94 1.685-10.696.647-1.981-.745-3.576-1.983-4.846-3.379l6.948-3.54c.721 1.431 1.586 2.454 2.509 3.178 2.086 1.638 4.415 1.712 5.793 1.563l-.047-.233c-.015-.077.007-.135.086-.165l.734-.288a.302.302 0 0 1 .342.086l.748-.288a.306.306 0 0 1 .341.086l.583.89Z"/>
+      </svg>
+    );
+  }
+  
+  if (skill.includes("react")) {
+    return (
+      <svg viewBox="-11.5 -10.23174 23 20.46348" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <circle cx="0" cy="0" r="2.05" fill="#61DAFB"/>
+        <g stroke="#61DAFB" strokeWidth="1" fill="none">
+          <ellipse rx="11" ry="4.2"/>
+          <ellipse rx="11" ry="4.2" transform="rotate(60)"/>
+          <ellipse rx="11" ry="4.2" transform="rotate(120)"/>
+        </g>
+      </svg>
+    );
+  }
+  
+  if (skill.includes("node")) {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#339933" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5v-3h3v3zm0-4.5h-3v-3h3v3z" />
+      </svg>
+    );
+  }
+  
+  if (skill.includes("docker")) {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#2496ED" d="M13.983 8.871h-1.993a.258.258 0 0 0-.258.258v1.993c0 .143.115.258.258.258h1.993a.258.258 0 0 0 .258-.258V9.13a.258.258 0 0 0-.258-.258M11.477 8.871H9.484a.258.258 0 0 0-.258.258v1.993c0 .143.115.258.258.258h1.993a.258.258 0 0 0 .258-.258V9.13a.258.258 0 0 0-.258-.258M11.477 6.365H9.484a.258.258 0 0 0-.258.258v1.993c0 .143.115.258.258.258h1.993a.258.258 0 0 0 .258-.258V6.623a.258.258 0 0 0-.258-.258M8.97 8.871H6.978a.258.258 0 0 0-.258.258v1.993c0 .143.115.258.258.258h1.993a.258.258 0 0 0 .258-.258V9.13a.258.258 0 0 0-.258-.258M8.97 6.365H6.978a.258.258 0 0 0-.258.258v1.993c0 .143.115.258.258.258h1.993a.258.258 0 0 0 .258-.258V6.623a.258.258 0 0 0-.258-.258M6.464 8.871H4.471a.258.258 0 0 0-.258.258v1.993c0 .143.115.258.258.258h1.993a.258.258 0 0 0 .258-.258V9.13a.258.258 0 0 0-.258-.258M13.983 6.365h-1.993a.258.258 0 0 0-.258.258v1.993c0 .143.115.258.258.258h1.993a.258.258 0 0 0 .258-.258V6.623a.258.258 0 0 0-.258-.258M16.49 8.871h-1.993a.258.258 0 0 0-.258.258v1.993c0 .143.115.258.258.258h1.993a.258.258 0 0 0 .258-.258V9.13a.258.258 0 0 0-.258-.258M23.774 9.54c-.61-.95-1.636-1.503-2.766-1.503H20.01V5.772a.258.258 0 0 0-.258-.258h-1.993a.258.258 0 0 0-.258.258v2.265h-1.012v1.993h6.516c.866 0 1.558.647 1.558 1.44 0 .793-.692 1.44-1.558 1.44h-9.52v1.44h6.5c1.4 0 2.535-1.127 2.535-2.52 0-.275-.045-.544-.13-.8M1.98 12.012h17.525c.346 0 .627.28.627.627 0 2.274-1.85 4.124-4.124 4.124H6.104A4.124 4.124 0 0 1 1.98 12.64c0-.347.28-.628.627-.628M3.235 17.5c1.233.053 2.235 1.055 2.235 2.288 0 1.265-1.026 2.29-2.29 2.29A2.29 2.29 0 0 1 .89 19.788c0-1.233 1.002-2.235 2.235-2.288" />
+      </svg>
+    );
+  }
+  
+  if (skill.includes("java") && !skill.includes("javascript")) {
+    return (
+      <svg viewBox="0 0 128 128" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#0074BD" d="M47.617 98.12s-4.767 2.774 3.397 3.71c9.892 1.13 14.947.968 25.845-1.092 0 0 2.871 1.795 6.873 3.351-24.439 10.47-55.308-.607-36.115-5.969zm-2.988-13.665s-5.348 3.959 2.823 4.805c10.567 1.091 18.91 1.18 33.354-1.6 0 0 1.993 2.025 5.132 3.131-29.542 8.64-62.446.68-41.309-6.336z"/>
+        <path fill="#EA2D2E" d="M69.802 61.271c6.025 6.935-1.58 13.17-1.58 13.17s15.289-7.891 8.269-17.777c-6.559-9.215-11.587-13.792 15.635-29.58 0 .001-42.731 10.67-22.324 34.187z"/>
+        <path fill="#0074BD" d="M102.123 108.229s3.529 2.91-3.888 5.159c-14.102 4.272-58.706 5.56-71.094.171-4.451-1.938 3.899-4.625 6.526-5.192 2.739-.593 4.303-.485 4.303-.485-4.953-3.487-32.013 6.85-13.743 9.815 49.821 8.076 90.817-3.637 77.896-9.468zM49.912 70.294s-22.686 5.389-8.033 7.348c6.188.828 18.518.638 30.011-.326 9.39-.789 18.813-2.474 18.813-2.474s-3.308 1.419-5.704 3.053c-23.042 6.061-67.544 3.238-54.731-2.958 10.832-5.239 19.644-4.643 19.644-4.643zm40.697 22.747c23.421-12.167 12.591-23.86 5.032-22.285-1.848.385-2.677.72-2.677.72s.688-1.079 2-1.543c14.953-5.255 26.451 15.503-4.823 23.725 0-.002.359-.327.468-.617z"/>
+        <path fill="#EA2D2E" d="M76.491 1.587S89.459 14.563 64.188 34.51c-20.266 16.006-4.621 25.13-.007 35.559-11.831-10.673-20.509-20.07-14.688-28.815C58.041 28.42 81.722 22.195 76.491 1.587z"/>
+        <path fill="#0074BD" d="M52.214 126.021c22.476 1.437 57-.8 57.817-11.436 0 0-1.571 4.032-18.577 7.231-19.186 3.612-42.854 3.191-56.887.874 0 .001 2.875 2.381 17.647 3.331z"/>
+      </svg>
+    );
+  }
+  
+  if (skill.includes("github") && !skill.includes("git &")) {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="var(--heading)" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+      </svg>
+    );
+  }
+  
+  if (skill.includes("git")) {
+    return (
+      <svg viewBox="0 0 128 128" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#ffffff" d="M124.737 58.378L69.621 3.264c-3.172-3.174-8.32-3.174-11.497 0L3.263 69.622c-3.174 3.171-3.174 8.324 0 11.497l55.116 55.116c3.177 3.174 8.325 3.174 11.497 0l54.861-54.861c3.178-3.172 3.178-8.32-.001-11.497z" />
+        <path fill="#F05032" d="M124.737 58.378L69.621 3.264c-3.172-3.174-8.32-3.174-11.497 0L46.68 14.71l14.518 14.518c3.375-1.139 7.243-.375 9.932 2.314 2.703 2.706 3.461 6.607 2.294 9.993l13.992 13.993c3.385-1.167 7.292-.413 9.994 2.295 3.78 3.777 3.78 9.9 0 13.679a9.673 9.673 0 01-13.683 0 9.677 9.677 0 01-2.105-10.521L68.574 47.933l-.002 34.341a9.708 9.708 0 01-1.399 5.097 9.686 9.686 0 01-13.679 0c-3.779-3.78-3.779-9.902 0-13.682a9.658 9.658 0 014.789-2.527V44.208a9.697 9.697 0 01-4.789-2.531 9.68 9.68 0 01-.01-13.676l-14.498-14.498L3.263 69.622c-3.174 3.171-3.174 8.324 0 11.497l55.116 55.116c3.177 3.174 8.325 3.174 11.497 0l54.861-54.861c3.178-3.172 3.178-8.32-.001-11.497" />
+      </svg>
+    );
+  }
+  
+  if (skill.includes("api") || skill.includes("rest") || skill.includes("service")) {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+        <path fill="#59D6B4" d="M21.039 0a2.959 2.959 0 00-2.65 4.274l-6.447 6.447a2.96 2.96 0 101.335 1.336l6.447-6.447A2.959 2.959 0 1021.04 0zM10.628 2.745c-.072 0-.143.003-.214.004-.072.002-.143.002-.215.005-.447.018-.893.064-1.335.138l-.03.005-.185.033-.105.02a7.718 7.718 0 00-.289.062l-.032.008a10.69 10.69 0 00-2.55.95l-.155.089c-.063.034-.125.07-.187.105-.046.027-.093.051-.14.079H5.19l-.01.005-.036.02v.002l.111.184 3.15 5.23a4.168 4.168 0 01.38-.202 4.294 4.294 0 011.628-.413c.071-.004.143-.008.214-.008zm.428.01v6.333c.325.034.647.103.96.209l4.66-4.66c-.173-.12-.348-.237-.528-.347l-.026-.015c-.056-.035-.112-.067-.168-.1l-.098-.056-.099-.055a12.735 12.735 0 00-.171-.092l-.027-.014a10.628 10.628 0 00-1.425-.617c-.69-.241-1.403-.41-2.128-.505l-.089-.012-.09-.01a6.56 6.56 0 00-.17-.019l-.049-.004-.204-.017a6.44 6.44 0 00-.255-.015c-.031-.003-.062-.003-.093-.004zM4.782 4.498a9.92 9.92 0 00-1.36 1.062l4.461 4.461.018.018c.049-.04.098-.078.149-.116l-.011-.018zm-1.67 1.36c-.05.05-.098.103-.147.154l-.149.155c-.33.357-.63.73-.902 1.118l-.039.056a10.588 10.588 0 00-.216.326 10.6 10.6 0 00-1.65 5.276l-.006.215-.003.214h6.317c0-.072.007-.143.01-.214.005-.072.006-.144.013-.215.081-.822.399-1.625.952-2.3.045-.055.096-.106.144-.16.048-.052.093-.107.144-.158zm16.255 1.464l-4.663 4.663c.106.312.175.634.21.959h6.332l-.004-.094a11.579 11.579 0 00-.032-.456l-.005-.052a13.044 13.044 0 00-.026-.241v-.009l-.033-.24v-.009a10.618 10.618 0 00-.327-1.493l-.003-.01a15.839 15.839 0 00-.07-.228l-.01-.03a14.111 14.111 0 00-.069-.204l-.02-.055a5.65 5.65 0 00-.153-.405 7.84 7.84 0 00-.093-.227 16.67 16.67 0 00-.063-.144l-.037-.081a13.776 13.776 0 00-.08-.171l-.024-.052-.096-.194-.014-.027a11.2 11.2 0 00-.112-.212l-.004-.008a10.615 10.615 0 00-.604-.98zm-4.43 6.05c0 .071-.006.142-.01.214-.003.072-.005.143-.012.214a4.29 4.29 0 01-.952 2.301c-.045.055-.096.107-.144.16-.048.053-.093.108-.144.159l4.467 4.467c.051-.051.099-.104.148-.155.05-.052.1-.103.148-.155.331-.358.633-.733.905-1.122l.032-.046.098-.144.085-.13.04-.063a10.597 10.597 0 001.647-5.272c.003-.071.004-.143.006-.214.001-.071.004-.143.004-.214zM.01 13.8l.004.093.01.179.005.076.017.206.005.046c.007.076.015.153.024.228l.003.022a9.605 9.605 0 00.033.248c.072.505.182 1.005.327 1.497l.002.006c.022.077.047.154.071.23l.004.014.005.014a15.737 15.737 0 00.153.439l.03.08.059.148a7.702 7.702 0 00.093.228l.062.14.038.084.078.169.027.054a10.677 10.677 0 00.225.441l.025.043 5.408-3.258.02-.012a4.314 4.314 0 01-.395-1.414h-.025zm.505 2.846l-.206.058.002.005zm6.425-1.052l-5.415 3.262c.083.139.17.273.259.406l.008.014.004.005.008.014h.001c.007.012.014.022.022.032l.001.002v.001a10.634 10.634 0 00.298.417l.006.008a9.963 9.963 0 00.29.368l.033.04c.043.052.086.103.13.153l.057.065.112.127.064.069.029.031.083.09.035.035c.049.051.098.103.149.153L7.58 16.42a3.86 3.86 0 01-.285-.321 4.422 4.422 0 01-.356-.505zm6.416 1.111c-.05.04-.1.079-.15.116l.011.018 3.257 5.407c.151-.099.3-.2.446-.307.315-.232.62-.484.914-.756l-4.46-4.46zm-5.457.003l-.015.015-4.46 4.46a8.966 8.966 0 00.195.176c.022.02.043.04.065.058l.152.13a10.622 10.622 0 00.215.174l.023.017.191.148.008.005c.268.2.547.389.834.564l.03.018.164.097.101.057a5.458 5.458 0 00.27.148c.008.004.016.01.025.013.162.085.327.164.493.24l.158-.385 2.243-5.448.009-.02a4.328 4.328 0 01-.701-.467zm4.951.353c-.061.037-.124.07-.187.104a4.318 4.318 0 01-3.271.336c-.069-.02-.135-.047-.203-.071-.067-.024-.136-.044-.202-.072l-2.242 5.444-.088.213-.075.183v.001l.017.007a.137.137 0 00.019.007l.005.003c.052.021.106.04.159.06.067.027.133.053.2.077l.102.04c.702.247 1.43.42 2.168.518l.087.012.09.01.172.019a7.173 7.173 0 00.252.022c.023.001.048.001.071.003l.184.011.112.005a7.06 7.06 0 00.358.007h.05a10.667 10.667 0 001.793-.15l.185-.034.105-.02.109-.023.18-.04.032-.008a10.684 10.684 0 002.55-.95c.052-.028.104-.06.156-.089.063-.034.125-.07.187-.105.043-.024.087-.047.13-.073h.001l.002-.002.002-.001.002-.001.007-.004.042-.025-.11-.183-.11-.184zm3.262 5.414l-.042.025.042-.024zm-.05.029zm-.005.004h-.002z"/>
+    </svg>
+  );
+}
+
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" style={{ width: "16px", height: "16px", marginRight: "8px", verticalAlign: "middle", display: "inline-block" }}>
+      <path fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d="M8 5l-5 7 5 7M16 5l5 7-5 7M10 19l4-14" />
+    </svg>
+  );
+}
+
+
 const getOrbitPosition = (idx, total) => {
   if (total === 1) return { left: "50%", top: "92%" };
   
-  // Dynamically widen the orbit span (from 120 deg up to 270 deg) based on the number of icons to prevent overlapping
-  const span = total <= 5 ? 120 : Math.min(270, 120 + (total - 5) * 25);
+  // Dynamically shrink the spacing (step) as the number of icons increases
+  // to keep all icons compactly clustered at the bottom curve instead of spreading up the sides.
+  let step = 34; // standard spacing for 2 icons
+  if (total === 3) step = 28;
+  else if (total === 4) step = 23;
+  else if (total >= 5) {
+    step = Math.max(15, 20 - (total - 5) * 1.5);
+  }
   
-  // Keep the arc centered at the bottom (90 degrees on a standard screen unit circle)
+  const span = (total - 1) * step;
   const startAngle = 90 + span / 2;
   const endAngle = 90 - span / 2;
   
   const angle = startAngle - idx * ((startAngle - endAngle) / (total - 1));
   const rad = (angle * Math.PI) / 180;
   
-  // Dynamically scale the radius (from 42% up to 48%) to perfectly place icons on the dashed border ring when crowded
-  const R = total <= 5 ? 42 : Math.min(48, 42 + (total - 5) * 1);
+  // Scale the radius to follow the dashed ring perfectly
+  const R = total <= 5 ? 42 : Math.min(48, 42 + (total - 5) * 1.2);
   
   const left = 50 + R * Math.cos(rad);
   const top = 50 + R * Math.sin(rad);
@@ -234,12 +380,16 @@ const getOrbitPosition = (idx, total) => {
   };
 };
 
+
+
 function Home({ profile }) {
   const [status, setStatus] = useState("");
   const [copiedId, setCopiedId] = useState("");
   const [heroImgFailed, setHeroImgFailed] = useState(false);
   const [brandImgFailed, setBrandImgFailed] = useState(false);
   const [visibleProjectsCount, setVisibleProjectsCount] = useState(3);
+
+
 
   useEffect(() => {
     setHeroImgFailed(false);
@@ -440,7 +590,15 @@ function Home({ profile }) {
             <span>Toolkit</span>
             <h3>Skills that ship ideas</h3>
           </div>
-          <div className="chips">{profile.skills?.map((s) => <span key={s}>{s}</span>)}</div>
+          <div className="chips">
+            {profile.skills?.map((s) => (
+              <span key={s} style={{ display: "inline-flex", alignItems: "center" }}>
+                {getSkillIcon(s, "skill-chip-icon")}
+                {s}
+              </span>
+            ))}
+          </div>
+
         </section>
 
         <section className="panel projects-panel" id="projects">
@@ -507,59 +665,112 @@ function Home({ profile }) {
             ))}
           </div>
 
-          {profile.projects && profile.projects.length > visibleProjectsCount && (
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "40px" }}>
-              <button
-                onClick={() => setVisibleProjectsCount((prev) => prev + 3)}
-                className="btn-load-more"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "12px 28px",
-                  borderRadius: "99px",
-                  background: "rgba(255, 255, 255, 0.02)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  color: "var(--heading)",
-                  fontWeight: "800",
-                  fontSize: "0.9rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "1px",
-                  cursor: "pointer",
-                  backdropFilter: "blur(12px)",
-                  transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px) scale(1.03)";
-                  e.currentTarget.style.background = "rgba(89, 214, 180, 0.08)";
-                  e.currentTarget.style.borderColor = "rgba(89, 214, 180, 0.3)";
-                  e.currentTarget.style.color = "var(--accent)";
-                  e.currentTarget.style.boxShadow = "0 10px 25px rgba(89, 214, 180, 0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0) scale(1)";
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
-                  e.currentTarget.style.color = "var(--heading)";
-                  e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
-                }}
-              >
-                <span>Load More Projects</span>
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ transition: "transform 0.3s ease" }}
+          {profile.projects && profile.projects.length > 3 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "16px", marginTop: "40px", flexWrap: "wrap" }}>
+              {visibleProjectsCount < profile.projects.length && (
+                <button
+                  onClick={() => setVisibleProjectsCount((prev) => Math.min(profile.projects.length, prev + 3))}
+                  className="btn-load-more"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "12px 28px",
+                    borderRadius: "99px",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    color: "var(--heading)",
+                    fontWeight: "800",
+                    fontSize: "0.9rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    cursor: "pointer",
+                    backdropFilter: "blur(12px)",
+                    transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-4px) scale(1.03)";
+                    e.currentTarget.style.background = "rgba(89, 214, 180, 0.08)";
+                    e.currentTarget.style.borderColor = "rgba(89, 214, 180, 0.3)";
+                    e.currentTarget.style.color = "var(--accent)";
+                    e.currentTarget.style.boxShadow = "0 10px 25px rgba(89, 214, 180, 0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                    e.currentTarget.style.color = "var(--heading)";
+                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
+                  }}
                 >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
+                  <span>Load More Projects</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+              )}
+              {visibleProjectsCount > 3 && (
+                <button
+                  onClick={() => setVisibleProjectsCount(3)}
+                  className="btn-show-less"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "12px 28px",
+                    borderRadius: "99px",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    color: "var(--heading)",
+                    fontWeight: "800",
+                    fontSize: "0.9rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    cursor: "pointer",
+                    backdropFilter: "blur(12px)",
+                    transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-4px) scale(1.03)";
+                    e.currentTarget.style.background = "rgba(255, 122, 89, 0.08)";
+                    e.currentTarget.style.borderColor = "rgba(255, 122, 89, 0.3)";
+                    e.currentTarget.style.color = "#ff7a59";
+                    e.currentTarget.style.boxShadow = "0 10px 25px rgba(255, 122, 89, 0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                    e.currentTarget.style.color = "var(--heading)";
+                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
+                  }}
+                >
+                  <span>Show Less</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="18 15 12 9 6 15" />
+                  </svg>
+                </button>
+              )}
             </div>
           )}
         </section>
@@ -646,12 +857,7 @@ function Admin({ profile, setProfile }) {
 
   // Local projects state for full CRUD management
   const [localProjects, setLocalProjects] = useState(profile?.projects || []);
-  const [visibleAdminProjectsCount, setVisibleAdminProjectsCount] = useState(3);
-
-  // Sync localProjects when profile loads/changes
-  useEffect(() => {
-    setLocalProjects(profile?.projects || []);
-  }, [profile]);
+  const [visibleAdminProjectsCount, setVisibleAdminProjectsCount] = useState(1);
 
   // Local skills state for full CRUD management
   const [localSkills, setLocalSkills] = useState(profile?.skills || []);
@@ -663,6 +869,7 @@ function Admin({ profile, setProfile }) {
 
   // Local socials state for full CRUD management
   const [localSocials, setLocalSocials] = useState(profile?.socials && profile.socials.length > 0 ? profile.socials : defaultSocials);
+  const [visibleAdminSocialsCount, setVisibleAdminSocialsCount] = useState(1);
 
   // Sync localSocials when profile loads/changes
   useEffect(() => {
@@ -672,6 +879,7 @@ function Admin({ profile, setProfile }) {
       setLocalSocials(defaultSocials);
     }
   }, [profile]);
+
 
   const addSocial = () => {
     setLocalSocials((prev) => [
@@ -1038,13 +1246,7 @@ function Admin({ profile, setProfile }) {
                     cursor: "default"
                   }}
                 >
-                  <span style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    backgroundColor: "var(--accent)",
-                    boxShadow: "0 0 6px var(--accent)"
-                  }} />
+                  {getSkillIcon(skill, "skill-chip-icon")}
                   {skill}
                   <button
                     type="button"
@@ -1222,60 +1424,114 @@ function Admin({ profile, setProfile }) {
               </div>
             </div>
           ))}
-          {localProjects.length > visibleAdminProjectsCount && (
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "24px", marginBottom: "8px" }}>
-              <button
-                type="button"
-                onClick={() => setVisibleAdminProjectsCount((prev) => prev + 3)}
-                className="btn-load-more"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "10px 24px",
-                  borderRadius: "99px",
-                  background: "rgba(255, 255, 255, 0.02)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  color: "var(--heading)",
-                  fontWeight: "800",
-                  fontSize: "0.85rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "1px",
-                  cursor: "pointer",
-                  backdropFilter: "blur(12px)",
-                  transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-3px) scale(1.03)";
-                  e.currentTarget.style.background = "rgba(89, 214, 180, 0.08)";
-                  e.currentTarget.style.borderColor = "rgba(89, 214, 180, 0.3)";
-                  e.currentTarget.style.color = "var(--accent)";
-                  e.currentTarget.style.boxShadow = "0 8px 20px rgba(89, 214, 180, 0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0) scale(1)";
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
-                  e.currentTarget.style.color = "var(--heading)";
-                  e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
-                }}
-              >
-                <span>Load More Projects</span>
-                <svg
-                  viewBox="0 0 24 24"
-                  width="14"
-                  height="14"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ transition: "transform 0.3s ease" }}
+          {localProjects.length > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "16px", marginTop: "24px", marginBottom: "8px", flexWrap: "wrap" }}>
+              {visibleAdminProjectsCount < localProjects.length && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleAdminProjectsCount((prev) => Math.min(localProjects.length, prev + 3))}
+                  className="btn-load-more"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 24px",
+                    borderRadius: "99px",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    color: "var(--heading)",
+                    fontWeight: "800",
+                    fontSize: "0.85rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    cursor: "pointer",
+                    backdropFilter: "blur(12px)",
+                    transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-3px) scale(1.03)";
+                    e.currentTarget.style.background = "rgba(89, 214, 180, 0.08)";
+                    e.currentTarget.style.borderColor = "rgba(89, 214, 180, 0.3)";
+                    e.currentTarget.style.color = "var(--accent)";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(89, 214, 180, 0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                    e.currentTarget.style.color = "var(--heading)";
+                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
+                  }}
                 >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
+                  <span>Load More Projects</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+              )}
+              {visibleAdminProjectsCount > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleAdminProjectsCount(1)}
+                  className="btn-show-less"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 24px",
+                    borderRadius: "99px",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    color: "var(--heading)",
+                    fontWeight: "800",
+                    fontSize: "0.85rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    cursor: "pointer",
+                    backdropFilter: "blur(12px)",
+                    transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-3px) scale(1.03)";
+                    e.currentTarget.style.background = "rgba(255, 122, 89, 0.08)";
+                    e.currentTarget.style.borderColor = "rgba(255, 122, 89, 0.3)";
+                    e.currentTarget.style.color = "#ff7a59";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(255, 122, 89, 0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                    e.currentTarget.style.color = "var(--heading)";
+                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
+                  }}
+                >
+                  <span>Show Less</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="18 15 12 9 6 15" />
+                  </svg>
+                </button>
+              )}
             </div>
           )}
           {localProjects.length === 0 && (
@@ -1321,7 +1577,7 @@ function Admin({ profile, setProfile }) {
           Configure your social media handles. They will be distributed dynamically along your profile's orbit ring, top bar, and contact section.
         </p>
         <div className="admin-projects-list">
-          {localSocials.map((soc, i) => (
+          {localSocials.slice(0, visibleAdminSocialsCount).map((soc, i) => (
             <div key={i} className="admin-project-card" style={{ padding: "20px" }}>
               <div className="admin-project-card-header" style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span className="admin-project-number" style={{ display: "inline-flex", alignItems: "center", gap: "10px", fontWeight: "700" }}>
@@ -1494,10 +1750,121 @@ function Admin({ profile, setProfile }) {
               </div>
             </div>
           ))}
+          {localSocials.length > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "16px", marginTop: "24px", marginBottom: "16px", flexWrap: "wrap" }}>
+              {visibleAdminSocialsCount < localSocials.length && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleAdminSocialsCount((prev) => Math.min(localSocials.length, prev + 3))}
+                  className="btn-load-more"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 24px",
+                    borderRadius: "99px",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    color: "var(--heading)",
+                    fontWeight: "800",
+                    fontSize: "0.85rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    cursor: "pointer",
+                    backdropFilter: "blur(12px)",
+                    transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-3px) scale(1.03)";
+                    e.currentTarget.style.background = "rgba(89, 214, 180, 0.08)";
+                    e.currentTarget.style.borderColor = "rgba(89, 214, 180, 0.3)";
+                    e.currentTarget.style.color = "var(--accent)";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(89, 214, 180, 0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                    e.currentTarget.style.color = "var(--heading)";
+                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
+                  }}
+                >
+                  <span>Load More Social Links</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+              )}
+              {visibleAdminSocialsCount > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleAdminSocialsCount(1)}
+                  className="btn-show-less"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 24px",
+                    borderRadius: "99px",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    color: "var(--heading)",
+                    fontWeight: "800",
+                    fontSize: "0.85rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    cursor: "pointer",
+                    backdropFilter: "blur(12px)",
+                    transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-3px) scale(1.03)";
+                    e.currentTarget.style.background = "rgba(255, 122, 89, 0.08)";
+                    e.currentTarget.style.borderColor = "rgba(255, 122, 89, 0.3)";
+                    e.currentTarget.style.color = "#ff7a59";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(255, 122, 89, 0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                    e.currentTarget.style.color = "var(--heading)";
+                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
+                  }}
+                >
+                  <span>Show Less</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="18 15 12 9 6 15" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
           {localSocials.length === 0 && (
             <p className="admin-no-projects">No social links configured yet. Click "Add Social Link" to get started.</p>
           )}
         </div>
+
         <div className="admin-projects-footer">
           <button type="button" className="btn-add-project" onClick={addSocial}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
@@ -2088,10 +2455,6 @@ function NotFound() {
 export default function App() {
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState("");
-  const [isLocked, setIsLocked] = useState(() => {
-    return sessionStorage.getItem("portfolio_locked") === "true";
-  });
-
   const location = useLocation();
   const is404 = location.pathname !== "/" && location.pathname !== "/admin";
 
@@ -2113,12 +2476,7 @@ export default function App() {
       link.rel = "icon";
       document.head.appendChild(link);
     }
-    if (isLocked) {
-      // Secure favicon immediately: replace with anonymous secure lock SVG
-      link.href = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%2311110f"/><text x="50" y="68" font-size="55" text-anchor="middle">🔒</text></svg>`;
-      // Wipe custom page title
-      document.title = "🔒 Access Restrained | Portfolio Secured";
-    } else if (is404) {
+    if (is404) {
       // Set 404 warning favicon and page title
       link.href = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%2311110f"/><text x="50" y="68" font-size="55" text-anchor="middle">⚠️</text></svg>`;
       document.title = "⚠️ 404 | Page Not Found";
@@ -2132,242 +2490,7 @@ export default function App() {
         link.href = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2359d6b4"/><text x="50" y="65" font-family="Outfit, sans-serif" font-size="50" font-weight="bold" fill="%2312120f" text-anchor="middle">${letter}</text></svg>`;
       }
     }
-  }, [isLocked, profile, is404]);
-
-  // 3. Global Capturing Context Blockers & DevTools Detector
-  useEffect(() => {
-    // A. Context Menu Block (capture phase!)
-    const handleContextMenu = (e) => {
-      e.preventDefault();
-    };
-    window.addEventListener("contextmenu", handleContextMenu, true);
-
-    // B. Hotkeys Block (capture phase!)
-    const handleKeyDown = (e) => {
-      if (
-        e.key === "F12" ||
-        (e.ctrlKey && e.shiftKey && e.key === "I") ||
-        (e.ctrlKey && e.shiftKey && e.key === "J") ||
-        (e.ctrlKey && e.shiftKey && e.key === "C") ||
-        (e.ctrlKey && (e.key === "u" || e.key === "U")) ||
-        (e.ctrlKey && (e.key === "s" || e.key === "S"))
-      ) {
-        e.preventDefault();
-        return false;
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown, true);
-
-    // C. DevTools Detector using mature devtools-detector package
-    const handleDevToolsChange = (isOpen) => {
-      if (isOpen) {
-        setIsLocked(true);
-        sessionStorage.setItem("portfolio_locked", "true");
-      } else {
-        setIsLocked(false);
-        sessionStorage.removeItem("portfolio_locked");
-      }
-    };
-
-    addListener(handleDevToolsChange);
-    launch();
-
-    // D. Global select/drag CSS injection
-    const styleEl = document.createElement("style");
-    styleEl.innerHTML = `
-      * {
-        user-select: none !important;
-        -webkit-user-drag: none !important;
-      }
-      input, textarea, button {
-        user-select: auto !important;
-      }
-    `;
-    document.head.appendChild(styleEl);
-
-    return () => {
-      window.removeEventListener("contextmenu", handleContextMenu, true);
-      window.removeEventListener("keydown", handleKeyDown, true);
-      removeListener(handleDevToolsChange);
-      stop();
-      if (document.head.contains(styleEl)) {
-        document.head.removeChild(styleEl);
-      }
-    };
-  }, []);
-
-  if (isLocked) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          background: "radial-gradient(circle at center, #181816 0%, #0a0a09 100%)",
-          color: "#f6f1e8",
-          fontFamily: "Outfit, sans-serif",
-          textAlign: "center",
-          padding: "20px",
-          margin: 0,
-          overflow: "hidden",
-          position: "relative",
-          userSelect: "none"
-        }}
-      >
-        <style dangerouslySetInnerHTML={{__html: `
-          @keyframes glow-pulse {
-            0% { box-shadow: 0 0 20px rgba(234, 67, 53, 0.1), inset 0 0 20px rgba(234, 67, 53, 0.05); }
-            50% { box-shadow: 0 0 40px rgba(234, 67, 53, 0.3), inset 0 0 30px rgba(234, 67, 53, 0.1); }
-            100% { box-shadow: 0 0 20px rgba(234, 67, 53, 0.1), inset 0 0 20px rgba(234, 67, 53, 0.05); }
-          }
-          @keyframes floating {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-          }
-          @keyframes border-glow {
-            0% { border-color: rgba(234, 67, 53, 0.05); }
-            50% { border-color: rgba(234, 67, 53, 0.25); }
-            100% { border-color: rgba(234, 67, 53, 0.05); }
-          }
-        `}} />
-
-        <div
-          style={{
-            position: "absolute",
-            width: "350px",
-            height: "350px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(234, 67, 53, 0.05) 0%, rgba(0, 0, 0, 0) 70%)",
-            top: "10%",
-            left: "25%",
-            filter: "blur(40px)",
-            pointerEvents: "none",
-            zIndex: 1
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            width: "400px",
-            height: "400px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(89, 214, 180, 0.03) 0%, rgba(0, 0, 0, 0) 70%)",
-            bottom: "10%",
-            right: "20%",
-            filter: "blur(40px)",
-            pointerEvents: "none",
-            zIndex: 1
-          }}
-        />
-
-        <div
-          style={{
-            padding: "50px 40px",
-            borderRadius: "24px",
-            background: "rgba(255, 255, 255, 0.01)",
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
-            border: "1px solid rgba(255, 255, 255, 0.03)",
-            boxShadow: "0 50px 100px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
-            maxWidth: "520px",
-            zIndex: 2,
-            animation: "floating 6s ease-in-out infinite, border-glow 4s ease-in-out infinite",
-            position: "relative"
-          }}
-        >
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "6px 14px",
-              borderRadius: "100px",
-              background: "rgba(234, 67, 53, 0.08)",
-              border: "1px solid rgba(234, 67, 53, 0.15)",
-              color: "#ea4335",
-              fontSize: "0.75rem",
-              fontWeight: "700",
-              letterSpacing: "1.5px",
-              textTransform: "uppercase",
-              marginBottom: "24px"
-            }}
-          >
-            <span
-              style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                backgroundColor: "#ea4335",
-                boxShadow: "0 0 10px #ea4335"
-              }}
-            />
-            Shield Active
-          </div>
-
-          <div
-            style={{
-              width: "90px",
-              height: "90px",
-              borderRadius: "50%",
-              backgroundColor: "rgba(18, 18, 15, 0.6)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              margin: "0 auto 28px auto",
-              fontSize: "2.8rem",
-              border: "1px solid rgba(255, 255, 255, 0.05)",
-              animation: "glow-pulse 4s ease-in-out infinite"
-            }}
-          >
-            🔒
-          </div>
-
-          <h1
-            style={{
-              color: "#fff",
-              fontSize: "2.25rem",
-              margin: "0 0 16px 0",
-              fontWeight: "900",
-              letterSpacing: "-1px",
-              lineHeight: "1.2"
-            }}
-          >
-            System Secured
-          </h1>
-          
-          <p
-            style={{
-              fontSize: "1rem",
-              color: "#a69e90",
-              lineHeight: "1.6",
-              margin: "0 0 28px 0",
-              fontWeight: "400"
-            }}
-          >
-            Developer tools are disabled on this portfolio to safeguard copyrighted assets, custom codebase, and intellectual properties.
-          </p>
-
-          <div
-            style={{
-              padding: "16px 20px",
-              borderRadius: "12px",
-              background: "rgba(234, 67, 53, 0.03)",
-              border: "1px solid rgba(234, 67, 53, 0.08)",
-              color: "#ea4335",
-              fontSize: "0.85rem",
-              fontWeight: "600",
-              lineHeight: "1.4"
-            }}
-          >
-            ⚠️ To proceed, please close your Developer Tools / Inspector panel and reload the page!
-          </div>
-        </div>
-      </div>
-    );
-  }
+  }, [profile, is404]);
 
   if (!profile) return <p className="loading">{status || "Loading portfolio..."}</p>;
 
@@ -2379,3 +2502,5 @@ export default function App() {
     </Routes>
   );
 }
+
+

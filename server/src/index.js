@@ -89,10 +89,117 @@ const getEmailSocialIconUrl = (iconName) => {
 const PORT = Number(process.env.PORT || 5000);
 const MONGO_URI = process.env.MONGO_URI || "";
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || "";
+
+const escapeHtml = (value) =>
+  String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+
+const isValidUrl = (value) => {
+  const url = String(value || "").trim();
+  if (!url) return false;
+  if (url.startsWith("#")) return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "mailto:";
+  } catch {
+    return false;
+  }
+};
+
+const requireAdminAuth = (req, res, next) => {
+  if (!ADMIN_API_KEY) {
+    return res.status(503).json({ ok: false, error: "Admin auth is not configured on server" });
+  }
+  const key = req.header("x-admin-key");
+  if (!key || key !== ADMIN_API_KEY) {
+    return res.status(401).json({ ok: false, error: "Unauthorized admin request" });
+  }
+  return next();
+};
+
+const validateProfilePayload = (payload) => {
+  const errors = [];
+  const out = {};
+  const name = String(payload?.name || "").trim();
+  const headline = String(payload?.headline || "").trim();
+  const email = String(payload?.email || "").trim();
+  const about = String(payload?.about || "").trim();
+
+  if (!name || name.length > 80) errors.push("Name is required and must be <= 80 chars");
+  if (!headline || headline.length > 140) errors.push("Headline is required and must be <= 140 chars");
+  if (!isValidEmail(email)) errors.push("Valid email is required");
+  if (!about || about.length > 1200) errors.push("About is required and must be <= 1200 chars");
+
+  out.name = name;
+  out.headline = headline;
+  out.email = email;
+  out.about = about;
+
+  out.skills = Array.isArray(payload?.skills)
+    ? payload.skills.map((s) => String(s).trim()).filter(Boolean).slice(0, 40)
+    : [];
+
+  out.stats = Array.isArray(payload?.stats)
+    ? payload.stats
+        .slice(0, 6)
+        .map((s) => ({ value: String(s?.value || "").trim(), label: String(s?.label || "").trim() }))
+        .filter((s) => s.value && s.label)
+    : [];
+
+  out.projects = Array.isArray(payload?.projects)
+    ? payload.projects
+        .slice(0, 24)
+        .map((p) => ({
+          title: String(p?.title || "").trim(),
+          description: String(p?.description || "").trim(),
+          link: String(p?.link || "#").trim(),
+          github: String(p?.github || "").trim()
+        }))
+        .filter((p) => p.title && p.description)
+    : [];
+
+  out.socials = Array.isArray(payload?.socials)
+    ? payload.socials
+        .slice(0, 20)
+        .map((s) => ({
+          platform: String(s?.platform || "").trim(),
+          url: String(s?.url || "").trim(),
+          icon: String(s?.icon || "globe").trim(),
+          showInNavbar: s?.showInNavbar !== false,
+          showInOrbit: s?.showInOrbit !== false,
+          showInContact: s?.showInContact !== false,
+          showInEmail: s?.showInEmail !== false
+        }))
+        .filter((s) => s.platform && s.url)
+    : [];
+
+  if (out.projects.some((p) => !isValidUrl(p.link) || (p.github && !isValidUrl(p.github)))) {
+    errors.push("Project links must be valid URLs");
+  }
+  if (out.socials.some((s) => !isValidUrl(s.url))) {
+    errors.push("Social links must be valid URLs");
+  }
+
+  const profileImage = String(payload?.profile_image_data || "").trim();
+  if (profileImage && !profileImage.startsWith("http") && !profileImage.startsWith("data:image")) {
+    errors.push("Profile image must be an URL or image data");
+  }
+  out.profile_image_data = profileImage;
+
+  return { errors, out };
+};
 
 app.use(cors({ origin: FRONTEND_ORIGIN }));
 app.use(express.json({ limit: "4mb" }));
 app.use(morgan("dev"));
+app.use("/api/admin", requireAdminAuth);
 
 const ensureProfile = async () => {
   const existing = await Profile.findOne({ slug: defaultProfile.slug });
@@ -139,6 +246,10 @@ app.get("/api/profile", async (_req, res) => {
 app.put("/api/admin/profile", async (req, res) => {
   try {
     const payload = req.body || {};
+    const { errors, out } = validateProfilePayload(payload);
+    if (errors.length > 0) {
+      return res.status(400).json({ ok: false, error: errors[0] });
+    }
     let newImageUrl = payload.profile_image_data || "";
     let newPublicId = "";
 
@@ -183,7 +294,7 @@ app.put("/api/admin/profile", async (req, res) => {
       { slug: defaultProfile.slug },
       {
         $set: {
-          ...payload,
+          ...out,
           profile_image_data: newImageUrl,
           profile_image_public_id: newPublicId,
           slug: defaultProfile.slug
@@ -201,20 +312,32 @@ app.put("/api/admin/profile", async (req, res) => {
 
 app.post("/api/contact", async (req, res) => {
   const { name, email, subject, message } = req.body || {};
-  if (!name || !email || !message) {
+  const cleanName = String(name || "").trim();
+  const cleanEmail = String(email || "").trim();
+  const cleanSubject = String(subject || "Project inquiry").trim();
+  const cleanMessage = String(message || "").trim();
+  if (!cleanName || !cleanEmail || !cleanMessage) {
     return res.status(400).json({ ok: false, error: "Please fill name, email and message" });
   }
-
-  // Generate a unique 6-character reference ID to bypass Gmail's duplicate email collapsing
-  const refId = Math.random().toString(36).substring(2, 8).toUpperCase();
+  if (!isValidEmail(cleanEmail)) {
+    return res.status(400).json({ ok: false, error: "Please enter a valid email" });
+  }
+  if (cleanName.length > 80 || cleanSubject.length > 160 || cleanMessage.length > 3000) {
+    return res.status(400).json({ ok: false, error: "Input is too long" });
+  }
+  const safeName = escapeHtml(cleanName);
+  const safeEmail = escapeHtml(cleanEmail);
+  const safeSubject = escapeHtml(cleanSubject);
+  const safeMessage = escapeHtml(cleanMessage);
+  const safeFirstName = escapeHtml(cleanName.split(" ")[0] || "there");
 
   try {
     // 1. Save message to MongoDB Atlas database
     await Message.create({
-      name: String(name).trim(),
-      email: String(email).trim(),
-      subject: String(subject || "Project inquiry").trim(),
-      message: String(message).trim()
+      name: cleanName,
+      email: cleanEmail,
+      subject: cleanSubject,
+      message: cleanMessage
     });
 
     // 2. Fetch recipient details dynamically from Profile Document
@@ -244,7 +367,6 @@ app.post("/api/contact", async (req, res) => {
     // 3. Send email notification asynchronously via Nodemailer (if configured)
     const transporter = getTransporter();
     if (transporter) {
-      const attachments = [];
       let profilePicHtml = "";
       const emailSocialsHtml = emailSocials.map((s) => `
         <td style="padding: 0 8px;">
@@ -256,21 +378,6 @@ app.post("/api/contact", async (req, res) => {
 
       if (receiverImage && receiverImage.startsWith("http")) {
         profilePicHtml = `<img src="${receiverImage}" width="50" height="50" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #087f6c; display: block;" alt="${receiverName}" />`;
-      } else if (receiverImage && receiverImage.includes("base64,")) {
-        try {
-          const parts = receiverImage.split("base64,");
-          const mimeType = parts[0].split(":")[1].split(";")[0] || "image/png";
-          const base64Data = parts[1];
-          attachments.push({
-            content: Buffer.from(base64Data, 'base64'),
-            cid: 'profile_pic',
-            contentType: mimeType,
-            contentDisposition: 'inline'
-          });
-          profilePicHtml = `<img src="cid:profile_pic" width="50" height="50" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #087f6c; display: block;" alt="${receiverName}" />`;
-        } catch (imgErr) {
-          console.error("Error preparing profile image attachment:", imgErr);
-        }
       }
 
       if (!profilePicHtml) {
@@ -284,13 +391,11 @@ app.post("/api/contact", async (req, res) => {
       const notificationMailOptions = {
         from: `"${receiverName} Portfolio" <${process.env.SMTP_USER}>`,
         to: receiverEmail,
-        replyTo: String(email).trim(),
-        subject: `📩 New Message from ${name}: ${String(subject || "Project inquiry").trim()}`,
+        replyTo: cleanEmail,
+        subject: `New Message from ${cleanName}: ${cleanSubject}`,
         html: `
-          <!-- Unique email identifier to prevent Gmail threading collapse -->
-          <span style="display:none !important; font-size:0px; color:transparent; line-height:0; opacity:0; height:0; width:0; mso-hide:all; overflow:hidden; visibility:hidden;">Ref: ${refId}</span>
-
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 50px 20px; color: #0f172a; margin: 0;">
+
             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); border: 1px solid #e2e8f0;">
               
               <!-- Glowing Top Gradient Bar -->
@@ -328,7 +433,7 @@ app.post("/api/contact", async (req, res) => {
                         <td style="width: 24px; vertical-align: middle; font-size: 16px;">👤</td>
                         <td style="padding-left: 10px; vertical-align: middle;">
                           <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; display: block; margin-bottom: 2px;">Sender Name</span>
-                          <strong style="font-size: 15px; color: #0f172a;">${name}</strong>
+                          <strong style="font-size: 15px; color: #0f172a;">${safeName}</strong>
                         </td>
                       </tr>
                     </table>
@@ -341,7 +446,7 @@ app.post("/api/contact", async (req, res) => {
                         <td style="width: 24px; vertical-align: middle; font-size: 16px;">✉️</td>
                         <td style="padding-left: 10px; vertical-align: middle;">
                           <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; display: block; margin-bottom: 2px;">Email Address</span>
-                          <a href="mailto:${email}" style="font-size: 15px; font-weight: 700; color: #0ea5e9; text-decoration: none;">${email}</a>
+                          <a href="mailto:${safeEmail}" style="font-size: 15px; font-weight: 700; color: #0ea5e9; text-decoration: none;">${safeEmail}</a>
                         </td>
                       </tr>
                     </table>
@@ -354,7 +459,7 @@ app.post("/api/contact", async (req, res) => {
                         <td style="width: 24px; vertical-align: middle; font-size: 16px;">🏷️</td>
                         <td style="padding-left: 10px; vertical-align: middle;">
                           <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; display: block; margin-bottom: 2px;">Subject</span>
-                          <span style="font-size: 15px; font-weight: 600; color: #0f172a;">${subject || "Project inquiry"}</span>
+                          <span style="font-size: 15px; font-weight: 600; color: #0f172a;">${safeSubject}</span>
                         </td>
                       </tr>
                     </table>
@@ -365,7 +470,7 @@ app.post("/api/contact", async (req, res) => {
                 <div style="margin-bottom: 35px;">
                   <h4 style="margin: 0 0 12px 0; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Message Content</h4>
                   <div style="background-color: #ffffff; border-left: 4px solid #10b981; padding: 22px 24px; border-radius: 4px 16px 16px 4px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.015);">
-                    <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #334155; white-space: pre-wrap; font-style: normal;">${message}</p>
+                    <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #334155; white-space: pre-wrap; font-style: normal;">${safeMessage}</p>
                   </div>
                 </div>
 
@@ -373,8 +478,8 @@ app.post("/api/contact", async (req, res) => {
                 <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                   <tr>
                     <td style="text-align: center;">
-                      <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subject || 'Project inquiry')}" style="background: linear-gradient(90deg, #0ea5e9 0%, #10b981 100%); color: #ffffff; padding: 14px 36px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 12px; display: inline-block; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2); letter-spacing: 0.2px;">
-                        ✉️ Quick Reply to ${name.split(" ")[0]}
+                      <a href="mailto:${safeEmail}?subject=Re: ${encodeURIComponent(cleanSubject)}" style="background: linear-gradient(90deg, #0ea5e9 0%, #10b981 100%); color: #ffffff; padding: 14px 36px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 12px; display: inline-block; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2); letter-spacing: 0.2px;">
+                        ✉️ Quick Reply to ${safeFirstName}
                       </a>
                     </td>
                   </tr>
@@ -395,18 +500,15 @@ app.post("/api/contact", async (req, res) => {
             </div>
           </div>
         `,
-        attachments: attachments
+        
       };
 
       // B. Mail options for the Sender (Visitor auto-reply)
       const autoReplyMailOptions = {
         from: `"${receiverName}" <${process.env.SMTP_USER}>`,
-        to: String(email).trim(),
-        subject: `📩 Thanks for reaching out, ${name.split(" ")[0]}!`,
+        to: cleanEmail,
+        subject: `Thanks for reaching out, ${cleanName.split(" ")[0]}!`,
         html: `
-          <!-- Unique email identifier to prevent Gmail threading collapse -->
-          <span style="display:none !important; font-size:0px; color:transparent; line-height:0; opacity:0; height:0; width:0; mso-hide:all; overflow:hidden; visibility:hidden;">Ref: ${refId}</span>
-
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 50px 20px; color: #0f172a; margin: 0;">
             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); border: 1px solid #e2e8f0;">
               
@@ -432,20 +534,20 @@ app.post("/api/contact", async (req, res) => {
 
               <!-- Body Content -->
               <div style="padding: 35px 40px 40px 40px;">
-                <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.3px;">Hi ${name.split(" ")[0]},</h3>
+                <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.3px;">Hi ${safeFirstName},</h3>
                 
                 <p style="font-size: 15px; line-height: 1.7; color: #475569; margin: 0 0 20px 0;">
                   Thank you so much for visiting my online portfolio and reaching out! I'm thrilled that you got in touch.
                 </p>
                 <p style="font-size: 15px; line-height: 1.7; color: #475569; margin: 0 0 28px 0;">
-                  I have successfully received your inquiry regarding "<strong>${subject || "Project inquiry"}</strong>". I review my inbox daily and will get back to you personally within the next **24 hours** to discuss this further.
+                  I have successfully received your inquiry regarding "<strong>${safeSubject}</strong>". I review my inbox daily and will get back to you personally within the next **24 hours** to discuss this further.
                 </p>
 
                 <!-- Received Copy Highlight -->
                 <div style="margin-bottom: 35px;">
                   <h4 style="margin: 0 0 10px 0; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Copy of Your Message</h4>
                   <div style="background-color: #f8fafc; border-left: 4px solid #0ea5e9; padding: 18px 20px; border-radius: 4px 16px 16px 4px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
-                    <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #475569; white-space: pre-wrap; font-style: italic;">"${message}"</p>
+                    <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #475569; white-space: pre-wrap; font-style: italic;">"${safeMessage}"</p>
                   </div>
                 </div>
 
@@ -489,7 +591,7 @@ app.post("/api/contact", async (req, res) => {
             </div>
           </div>
         `,
-        attachments: attachments
+        
       };
 
       // Send owner notification
@@ -551,4 +653,5 @@ start().catch((err) => {
 });
 
 // Force nodemon restart
+
 
